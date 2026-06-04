@@ -1,0 +1,74 @@
+{% macro brand_mark(icon_width='20', icon_box_class='w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sky-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]', text_class='text-xl font-semibold tracking-tight text-white/90', outer_class='flex items-center gap-3') %}
+<div class="{{ outer_class }}">
+    <div class="{{ icon_box_class }}">
+        <iconify-icon icon="lucide:scale" width="{{ icon_width }}"></iconify-icon>
+    </div>
+    <span class="{{ text_class }}">GED<span class="text-white/40 font-light">Jurídico</span></span>
+</div>
+{% endmacro %}
+
+{% macro background_grid(include_ambient=True) %}
+{% if include_ambient %}
+<div class="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-sky-500/20 blur-[120px] rounded-full mix-blend-screen pointer-events-none z-0"></div>
+<div class="fixed bottom-[-20%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full mix-blend-screen pointer-events-none z-0"></div>
+{% endif %}
+<div class="fixed inset-0 z-0 pointer-events-none hidden lg:block h-screen">
+    <div class="grid-line-v" style="left: var(--gx-1)">
+        <div class="beam-v" style="animation: beam-v 7s infinite 0s;"></div>
+    </div>
+    <div class="grid-line-v" style="left: var(--gx-2)">
+        <div class="beam-v" style="animation: beam-v 6s infinite 1.5s;"></div>
+    </div>
+    <div class="grid-line-v" style="left: var(--gx-3)">
+        <div class="beam-v" style="animation: beam-v 8s infinite 4s;"></div>
+    </div>
+    <div class="grid-line-v" style="left: var(--gx-4)">
+        <div class="beam-v" style="animation: beam-v 5s infinite 2s;"></div>
+    </div>
+
+    <div class="grid-line-h" style="top: var(--gy-1)">
+        <div class="beam-h" style="animation: beam-h 7s infinite 2s;"></div>
+    </div>
+    <div class="grid-line-h" style="top: 40%">
+        <div class="beam-h" style="animation: beam-h 6s infinite 0.5s;"></div>
+    </div>
+    <div class="grid-line-h" style="top: 80%">
+        <div class="beam-h" style="animation: beam-h 8s infinite 3s;"></div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro theme_switcher(variant='floating', label='Tema visual') %}
+{% if variant == 'floating' %}
+<div class="fixed top-4 right-4 lg:top-6 lg:right-6 z-50">
+    <div class="relative flex items-center bg-white/5 border border-white/10 rounded-full p-1 backdrop-blur-md theme-switcher-container shadow-sm">
+        <button class="theme-btn relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-white/50 hover:text-white transition-colors" data-theme-value="light" title="Modo Claro">
+            <iconify-icon icon="lucide:sun" width="16"></iconify-icon>
+        </button>
+        <button class="theme-btn relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-white/50 hover:text-white transition-colors" data-theme-value="system" title="Automático">
+            <iconify-icon icon="lucide:monitor" width="16"></iconify-icon>
+        </button>
+        <button class="theme-btn relative z-10 flex items-center justify-center w-8 h-8 rounded-full text-white/50 hover:text-white transition-colors" data-theme-value="dark" title="Modo Escuro">
+            <iconify-icon icon="lucide:moon" width="16"></iconify-icon>
+        </button>
+        <div class="absolute w-8 h-8 bg-white/10 border border-white/10 rounded-full transition-transform duration-300 pointer-events-none active-pill" style="left: 0.25rem;"></div>
+    </div>
+</div>
+{% else %}
+<div class="flex justify-between items-center px-2">
+    <span class="text-xs font-medium text-white/40">{{ label }}</span>
+    <div class="theme-switcher-container p-1 rounded-full bg-white/5 border border-white/10 flex items-center relative">
+        <div class="active-pill absolute top-1 left-1 w-8 h-8 bg-white/10 border border-white/5 rounded-full transition-transform duration-300 z-0"></div>
+        <button class="theme-btn active relative z-10 w-8 h-8 flex items-center justify-center text-white transition-colors" data-theme-value="light" title="Modo Claro">
+            <iconify-icon icon="lucide:sun" width="14"></iconify-icon>
+        </button>
+        <button class="theme-btn relative z-10 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition-colors" data-theme-value="system" title="Usar Sistema">
+            <iconify-icon icon="lucide:monitor" width="14"></iconify-icon>
+        </button>
+        <button class="theme-btn relative z-10 w-8 h-8 flex items-center justify-center text-white/50 hover:text-white transition-colors" data-theme-value="dark" title="Modo Escuro">
+            <iconify-icon icon="lucide:moon" width="14"></iconify-icon>
+        </button>
+    </div>
+</div>
+{% endif %}
+{% endmacro %}
