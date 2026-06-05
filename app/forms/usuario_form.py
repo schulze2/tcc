@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField, EmailField
+from wtforms import StringField, PasswordField, SubmitField, EmailField, BooleanField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
 from wtforms_sqlalchemy.fields import QuerySelectField
 
@@ -57,3 +57,18 @@ class CadastroUsuarioForm(FlaskForm):
     )
 
     submit = SubmitField("Registrar")
+
+
+class LoginForm(FlaskForm):
+    email = EmailField("Email", validators=[
+        DataRequired(message="O email é obrigatório."),
+        Email(message="Digite um email válido.")
+    ])
+
+    senha = PasswordField("Senha", validators=[
+        DataRequired(message="A senha é obrigatória.")
+    ])
+
+    lembrar_me = BooleanField("Lembrar-me")
+
+    submit = SubmitField("Entrar")

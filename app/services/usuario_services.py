@@ -1,4 +1,4 @@
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash, check_password_hash
 from sqlalchemy.exc import IntegrityError
 from app.models.usuario import Usuario
 from app.models.chave_publica import ChavePublica
@@ -38,9 +38,22 @@ def criar_usuario(nome, email, oab, senha, cargo, senha_chave):
         db.session.add(chave_publica)
         db.session.commit()
 
+        return usuario, chave_privada_pem
+
     except IntegrityError:
         db.session.rollback()
         raise ValueError(
             "Ocorreu um erro ao criar o usuário. Tente novamente.")
 
-    return usuario, chave_privada_pem
+
+def autenticar_usuario(email, senha):
+    email_normalizado = email.strip().lower()
+    usuario = Usuario.query.filter_by(email=email_normalizado).first()
+
+    if not usuario:
+        raise ValueError("Usuário não encontrado.")
+
+    if not check_password_hash(usuario.senha, senha):
+        raise ValueError("E-mail ou senha incorretos.")
+
+    return usuario

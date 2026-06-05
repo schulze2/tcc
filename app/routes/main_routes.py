@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, flash
 
-from app.forms.usuario_form import CadastroUsuarioForm
+from app.forms.usuario_form import CadastroUsuarioForm, LoginForm
 from app.services.usuario_services import criar_usuario
 
 main_bp = Blueprint('main', __name__)
@@ -9,6 +9,7 @@ main_bp = Blueprint('main', __name__)
 @main_bp.route("/", methods=["GET", "POST"])
 def index():
     form_registro = CadastroUsuarioForm()
+    form_login = LoginForm()
 
     if form_registro.validate_on_submit():
         try:
@@ -25,6 +26,7 @@ def index():
                 "index.html",
                 title="Cadastro Realizado",
                 form_registro=CadastroUsuarioForm(),
+                form_login=LoginForm(),
                 abrir_modal_download=True,
                 chave_privada=chave_privada_pem
             )
@@ -35,5 +37,6 @@ def index():
         "index.html",
         title="Login e Cadastro",
         form_registro=form_registro,
+        form_login=form_login,
         abrir_modal_registro=True
     )

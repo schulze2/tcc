@@ -40,7 +40,8 @@
                 </header>
 
                     <!-- Form -->
-                    <form class="space-y-5 delay-300 animate-reveal" onsubmit="event.preventDefault();">
+                    <form id="formLogin" method="POST" action="{{ url_for('auth.login') }}" class="space-y-5 delay-300 animate-reveal">
+                        {{ form_login.hidden_tag() }}
                         <!-- Email Field -->
                         <div class="space-y-2">
                             <label for="email" class="text-xs font-medium text-white/70 ml-1">E-mail
@@ -50,7 +51,8 @@
                                     class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/40 group-focus-within:text-sky-400 transition-colors duration-300">
                                     <iconify-icon icon="lucide:mail" width="18"></iconify-icon>
                                 </div>
-                                <input type="email" id="email" required autocomplete="email"
+                                <input type="email" id="{{ form_login.email.id }}" required autocomplete="email"
+                                    name="{{ form_login.email.name }}"
                                     placeholder="advogado@escritorio.com.br"
                                     class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-white/30 focus:outline-none focus:border-sky-500/50 focus:bg-white/10 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                             </div>
@@ -65,11 +67,12 @@
                                     class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/40 group-focus-within:text-sky-400 transition-colors duration-300">
                                     <iconify-icon icon="lucide:lock" width="18"></iconify-icon>
                                 </div>
-                                <input type="password" id="password" required autocomplete="current-password"
+                                <input type="password" id="{{ form_login.senha.id }}" required
+                                name="{{ form_login.senha.name }}"  autocomplete="current-password"
                                     placeholder="••••••••"
                                     class="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 pr-12 text-sm text-white placeholder-white/30 focus:outline-none focus:border-sky-500/50 focus:bg-white/10 transition-all duration-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
                                 <button type="button" aria-label="Mostrar ou ocultar senha"
-                                    onclick="togglePassword('password', 'eye-icon')"
+                                    onclick="togglePassword('{{ form_login.senha.id }}', 'eye-icon')"
                                     class="absolute inset-y-0 right-0 pr-4 flex items-center text-white/40 hover:text-white transition-colors duration-300 focus:outline-none focus:text-sky-400">
                                     <iconify-icon id="eye-icon" icon="lucide:eye" width="18"></iconify-icon>
                                 </button>
@@ -80,7 +83,7 @@
                         <div class="flex flex-wrap items-center justify-between gap-4 text-xs mt-2 mb-6">
                             <label class="flex items-center gap-2.5 cursor-pointer group">
                                 <div class="relative flex items-center justify-center">
-                                    <input type="checkbox" class="peer sr-only">
+                                    {{ form_login.lembrar_me(class="peer sr-only") }}
                                     <div
                                         class="w-4 h-4 border border-white/20 rounded bg-white/5 peer-checked:bg-sky-500 peer-checked:border-sky-500 transition-colors duration-300">
                                     </div>

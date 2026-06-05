@@ -1,5 +1,6 @@
 from sqlalchemy import Integer, String, ForeignKey, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from flask_login import UserMixin
 from app.extensions import db
 from datetime import datetime
 
@@ -9,11 +10,10 @@ if TYPE_CHECKING:
     from .cargo import Cargo
     from .chave_publica import ChavePublica
     from .documento import Documento
-    from .assinatura import Assinatura
     from .assinante_documento import AssinanteDocumento
 
 
-class Usuario(db.Model):
+class Usuario(UserMixin, db.Model):
     __tablename__ = "usuarios"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
