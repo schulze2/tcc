@@ -62,4 +62,5 @@ def login():
 @login_required
 def logout():
     logout_user()
+    flash("Você saiu da sua conta.", "success")
     return redirect(url_for("main.index"))
