@@ -33,13 +33,13 @@ def login():
             login_user(usuario, remember=form_login.lembrar_me.data)
 
             if is_ajax:
-                return jsonify({"success": True, "redirect_url": url_for("dashboard.index")})
+                return jsonify({"ok": True, "success": True, "redirect_url": url_for("dashboard.index")})
 
             return redirect(url_for("dashboard.index"))
 
         except ValueError as e:
             if is_ajax:
-                return jsonify({"ok": False, "error": str(e)}), 401
+                return jsonify({"ok": False, "message": str(e), "error": str(e)}), 401
 
             flash(str(e), "error")
 
@@ -47,7 +47,7 @@ def login():
         mensagem = next(iter(form_login.errors or form_login.senha.errors or [
                         "Verifique os dados informados."]), "Verifique os dados informados.")
 
-        return jsonify({"ok": False, "mensagem": mensagem}), 400
+        return jsonify({"ok": False, "message": mensagem, "mensagem": mensagem}), 400
 
     return render_template(
         "index.html",

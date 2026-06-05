@@ -1,0 +1,714 @@
+{% extends "base.html" %}
+{% from "components/ui.html" import background_grid, theme_switcher %}
+{% from "components/sidebar.html" import sidebar_navigation %}
+
+{% block content %}
+{{ background_grid() }}
+
+
+<div class="flex h-screen w-full relative z-10">
+    {{  sidebar_navigation(usuario, 'documentos', url_for('auth.logout')) }}
+
+
+    <!-- ========================================== -->
+    <!-- Main Content Area Placeholder -->
+    <!-- ========================================== -->
+    <main class="flex-1 h-full overflow-y-auto p-6 md:p-8 pt-24 md:pt-8 relative w-full">
+        <header class="mb-8">
+            <div>
+                <h1 class="text-3xl font-semibold tracking-tighter text-white">Documentos</h1>
+                <p class="text-sm text-neutral-400 mt-1">Gerencie e visualize os arquivos e contratos do escritório.</p>
+            </div>
+        </header>
+
+        <!-- Action Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Card 1: Novo Documento -->
+            <a href="{{ url_for('documentos.novo_documento') }}"
+                class="glass-panel rounded-2xl p-6 border border-sky-500/30 bg-sky-500/5 shadow-[0_4px_40px_rgba(14,165,233,0.1)] hover:-translate-y-1 hover:bg-sky-500/10 transition-all duration-300 flex flex-col items-center justify-center text-center group cursor-pointer">
+                <div
+                    class="w-14 h-14 rounded-full bg-sky-500/20 flex items-center justify-center text-sky-400 mb-4 group-hover:scale-110 transition-transform">
+                    <iconify-icon icon="lucide:file-plus" width="28"></iconify-icon>
+                </div>
+                <h3 class="font-semibold text-white text-lg">Novo Documento</h3>
+                <p class="text-sm text-neutral-400 mt-2">Faça upload ou crie um novo arquivo</p>
+            </a>
+
+            <!-- Card 2: Verificar a Assinatura -->
+            <button id="btn-verificar-assinatura"
+                class="glass-panel rounded-2xl p-6 border border-white/10 shadow-[0_4px_40px_rgba(0,0,0,0.1)] hover:-translate-y-1 hover:bg-purple-500/10 transition-all duration-300 flex flex-col items-center justify-center text-center group cursor-pointer">
+                <div
+                    class="w-14 h-14 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 mb-4 group-hover:scale-110 transition-transform">
+                    <iconify-icon icon="lucide:pen-tool" width="28"></iconify-icon>
+                </div>
+                <h3 class="font-semibold text-white text-lg">Verificar Assinatura</h3>
+                <p class="text-sm text-neutral-400 mt-2">Valide assinaturas digitais de documentos</p>
+            </button>
+
+            <!-- Card 3: Verificar no Blockchain -->
+            <button id="btn-verificar-blockchain"
+                class="glass-panel rounded-2xl p-6 border border-white/10 shadow-[0_4px_40px_rgba(0,0,0,0.1)] hover:-translate-y-1 hover:bg-emerald-500/10 transition-all duration-300 flex flex-col items-center justify-center text-center group cursor-pointer">
+                <div
+                    class="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-110 transition-transform">
+                    <iconify-icon icon="lucide:link" width="28"></iconify-icon>
+                </div>
+                <h3 class="font-semibold text-white text-lg">Verificar na Blockchain</h3>
+                <p class="text-sm text-neutral-400 mt-2">Consulte a autenticidade e registro</p>
+            </button>
+        </div>
+
+        <!-- Document List (Table) -->
+        <div class="glass-panel rounded-2xl border border-white/10 shadow-[0_4px_40px_rgba(0,0,0,0.2)] overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-white/5 bg-white/5">
+                            <th class="px-6 py-4 text-xs font-semibold text-white/50 uppercase tracking-wider">Nome do
+                                Arquivo</th>
+                            <th
+                                class="px-6 py-4 text-xs font-semibold text-white/50 uppercase tracking-wider hidden md:table-cell">
+                                Status</th>
+                            <th
+                                class="px-6 py-4 text-xs font-semibold text-white/50 uppercase tracking-wider hidden lg:table-cell">
+                                Modificado em</th>
+                            <th class="px-6 py-4 text-xs font-semibold text-white/50 uppercase tracking-wider">Tamanho
+                            </th>
+                            <th
+                                class="px-6 py-4 text-xs font-semibold text-white/50 uppercase tracking-wider text-right">
+                                Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-white/5">
+
+                        <!-- Row 1 -->
+                        <tr class="group hover:bg-white/5 transition-colors duration-200 cursor-pointer">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                                        <iconify-icon icon="lucide:file-text" width="20"></iconify-icon>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p
+                                            class="text-sm font-medium text-white/90 truncate group-hover:text-white transition-colors">
+                                            Contrato_Prestacao_Servicos_v2.pdf</p>
+                                        <p class="text-xs text-white/40 mt-0.5 lg:hidden">Modificado hoje, 14:30</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 hidden md:table-cell">
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium whitespace-nowrap">
+                                    <iconify-icon icon="lucide:check-circle-2" width="12"></iconify-icon>
+                                    Assinado
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 hidden lg:table-cell">
+                                <p class="text-sm text-white/70">Hoje, 14:30</p>
+                                <p class="text-xs text-white/30 mt-0.5">Por Dr. Renato Silva</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-sm text-white/60">2.4 MB</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div
+                                    class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Baixar Arquivo">
+                                        <iconify-icon icon="lucide:download" width="16"></iconify-icon>
+                                    </button>
+                                    <button
+                                        class="btn-options-dropdown w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Opções">
+                                        <iconify-icon icon="lucide:more-horizontal" width="16"></iconify-icon>
+                                    </button>
+                                </div>
+                                <div class="lg:hidden group-hover:hidden flex justify-end">
+                                    <iconify-icon icon="lucide:more-horizontal" width="16"
+                                        class="text-white/30"></iconify-icon>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 2 -->
+                        <tr class="group hover:bg-white/5 transition-colors duration-200 cursor-pointer">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                                        <iconify-icon icon="lucide:file-type-2" width="20"></iconify-icon>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p
+                                            class="text-sm font-medium text-white/90 truncate group-hover:text-white transition-colors">
+                                            Peticao_Inicial_Revisao.docx</p>
+                                        <p class="text-xs text-white/40 mt-0.5 lg:hidden">Modificado ontem, 16:45</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 hidden md:table-cell">
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium whitespace-nowrap">
+                                    <iconify-icon icon="lucide:clock" width="12"></iconify-icon>
+                                    Pendente
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 hidden lg:table-cell">
+                                <p class="text-sm text-white/70">Ontem, 16:45</p>
+                                <p class="text-xs text-white/30 mt-0.5">Por Dra. Amanda Costa</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-sm text-white/60">845 KB</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div
+                                    class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Baixar Arquivo">
+                                        <iconify-icon icon="lucide:download" width="16"></iconify-icon>
+                                    </button>
+                                    <button
+                                        class="btn-options-dropdown w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Opções">
+                                        <iconify-icon icon="lucide:more-horizontal" width="16"></iconify-icon>
+                                    </button>
+                                </div>
+                                <div class="lg:hidden group-hover:hidden flex justify-end">
+                                    <iconify-icon icon="lucide:more-horizontal" width="16"
+                                        class="text-white/30"></iconify-icon>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 3 -->
+                        <tr class="group hover:bg-white/5 transition-colors duration-200 cursor-pointer">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div
+                                        class="w-10 h-10 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                                        <iconify-icon icon="lucide:file-spreadsheet" width="20"></iconify-icon>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p
+                                            class="text-sm font-medium text-white/90 truncate group-hover:text-white transition-colors">
+                                            Planilha_Calculos_Periciais.xlsx</p>
+                                        <p class="text-xs text-white/40 mt-0.5 lg:hidden">Modificado 28/05/2026</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 hidden md:table-cell">
+                                <span
+                                    class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-medium whitespace-nowrap">
+                                    <iconify-icon icon="lucide:search" width="12"></iconify-icon>
+                                    Em Análise
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 hidden lg:table-cell">
+                                <p class="text-sm text-white/70">28 Mai 2026, 09:15</p>
+                                <p class="text-xs text-white/30 mt-0.5">Por Perito Assistente</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="text-sm text-white/60">1.2 MB</span>
+                            </td>
+                            <td class="px-6 py-4 text-right">
+                                <div
+                                    class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        class="w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Baixar Arquivo">
+                                        <iconify-icon icon="lucide:download" width="16"></iconify-icon>
+                                    </button>
+                                    <button
+                                        class="btn-options-dropdown w-8 h-8 rounded-lg flex items-center justify-center text-white/50 hover:text-white hover:bg-white/10 transition-colors"
+                                        title="Opções">
+                                        <iconify-icon icon="lucide:more-horizontal" width="16"></iconify-icon>
+                                    </button>
+                                </div>
+                                <div class="lg:hidden group-hover:hidden flex justify-end">
+                                    <iconify-icon icon="lucide:more-horizontal" width="16"
+                                        class="text-white/30"></iconify-icon>
+                                </div>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="p-4 border-t border-white/5 flex items-center justify-between bg-white/[0.01]">
+                <span class="text-xs font-medium text-white/40">Mostrando 1-3 de 124 documentos</span>
+                <div class="flex gap-1">
+                    <button
+                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-white/30 cursor-not-allowed">
+                        <iconify-icon icon="lucide:chevron-left" width="16"></iconify-icon>
+                    </button>
+                    <button
+                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/10 border border-white/10 text-white/90 text-sm font-medium">1</button>
+                    <button
+                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-transparent border border-transparent hover:bg-white/5 text-white/60 hover:text-white transition-colors text-sm font-medium">2</button>
+                    <button
+                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-transparent border border-transparent hover:bg-white/5 text-white/60 hover:text-white transition-colors text-sm font-medium">3</button>
+                    <button
+                        class="w-8 h-8 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                        <iconify-icon icon="lucide:chevron-right" width="16"></iconify-icon>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+</div>
+
+<!-- Verification Modal -->
+<div id="verify-modal-overlay"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+    <!-- Modal Content -->
+    <div id="verify-modal"
+        class="glass-panel bg-slate-900/90 rounded-3xl w-full max-w-2xl border border-white/10 shadow-2xl scale-95 transition-transform duration-300 flex flex-col max-h-[85vh] relative overflow-hidden">
+
+        <!-- STEP 1: Document List -->
+        <div id="verify-step-list" class="flex flex-col w-full h-full">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                        <iconify-icon icon="lucide:pen-tool" width="20"></iconify-icon>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-white">Verificar Assinatura</h2>
+                        <p class="text-sm text-neutral-400">Selecione o documento para verificação</p>
+                    </div>
+                </div>
+                <button id="close-verify-modal"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center">
+                    <iconify-icon icon="lucide:x" width="16"></iconify-icon>
+                </button>
+            </div>
+
+            <!-- Modal Search Bar -->
+            <div class="px-6 py-4 border-b border-white/5 shrink-0 bg-white/[0.02]">
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
+                        <iconify-icon icon="lucide:search" width="18"></iconify-icon>
+                    </div>
+                    <input type="text" placeholder="Buscar documento para verificar..."
+                        class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 transition-all">
+                </div>
+            </div>
+
+            <!-- Modal Body (Document List) -->
+            <div class="p-2 overflow-y-auto">
+                <ul class="space-y-1">
+                    <!-- Doc Item -->
+                    <li
+                        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                                <iconify-icon icon="lucide:file-text" width="20"></iconify-icon>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-white/90 truncate">Contrato_Prestacao_Servicos_v2.pdf
+                                </p>
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium uppercase tracking-wider">
+                                    <iconify-icon icon="lucide:shield-check" width="10"></iconify-icon>
+                                    Permissão: Leitura/Escrita
+                                </span>
+                            </div>
+                        </div>
+                        <button data-result="success"
+                            class="btn-start-verify shrink-0 px-4 py-2 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                            Verificar
+                            <iconify-icon icon="lucide:arrow-right" width="16"></iconify-icon>
+                        </button>
+                    </li>
+
+                    <!-- Doc Item -->
+                    <li
+                        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                                <iconify-icon icon="lucide:file-type-2" width="20"></iconify-icon>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-white/90 truncate">Peticao_Inicial_Revisao.docx</p>
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-medium uppercase tracking-wider">
+                                    <iconify-icon icon="lucide:eye" width="10"></iconify-icon>
+                                    Permissão: Apenas Leitura
+                                </span>
+                            </div>
+                        </div>
+                        <button data-result="error"
+                            class="btn-start-verify shrink-0 px-4 py-2 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                            Verificar
+                            <iconify-icon icon="lucide:arrow-right" width="16"></iconify-icon>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-white/5 bg-black/20 shrink-0 rounded-b-3xl text-center">
+                <p class="text-xs text-white/40">Apenas documentos com permissão do seu nível de acesso são exibidos.
+                </p>
+            </div>
+        </div>
+
+        <!-- STEP 2: Scanning Animation -->
+        <div id="verify-step-scan" class="hidden flex-col items-center justify-center p-12 w-full text-center py-20">
+            <div class="relative w-24 h-24 mb-6 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border-4 border-purple-500/20"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-purple-500 border-t-transparent animate-spin">
+                </div>
+                <iconify-icon icon="lucide:fingerprint" width="32" class="text-purple-400 animate-pulse"></iconify-icon>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2">Analisando Assinaturas...</h3>
+            <p class="text-sm text-neutral-400 max-w-sm mx-auto">Calculando Hash SHA-256 e consultando base de
+                certificados ICP-Brasil.</p>
+        </div>
+
+        <!-- STEP 3: Success Screen -->
+        <div id="verify-step-success" class="hidden flex-col items-center justify-center p-10 w-full text-center">
+            <div
+                class="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+                <iconify-icon icon="lucide:badge-check" width="40"></iconify-icon>
+            </div>
+            <h3 class="text-2xl font-semibold text-white mb-2">Assinatura Válida</h3>
+            <p class="text-sm text-neutral-400 mb-8">O documento possui assinaturas digitais autênticas e não foi
+                adulterado.</p>
+
+            <div class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-left mb-8">
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-4 border-b border-white/5 gap-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+                            <iconify-icon icon="lucide:user-check" width="20"></iconify-icon>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-white/90">Dr. Renato Silva</p>
+                            <p class="text-xs text-white/50">CPF: ***.456.789-**</p>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-xs font-medium uppercase tracking-wider">
+                        ICP-Brasil
+                    </span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-white/40">Data da Assinatura:</span>
+                        <span class="text-white/80 font-medium">12/05/2026 às 14:30</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-white/40">Hash (SHA-256):</span>
+                        <span class="text-white/80 font-mono text-xs">a8f5f167f44...e92b</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                <button
+                    class="btn-voltar-verificacao px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors font-medium">
+                    Voltar à Lista
+                </button>
+                <button
+                    class="px-6 py-2.5 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors font-medium flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
+                    <iconify-icon icon="lucide:download" width="18"></iconify-icon>
+                    Baixar Relatório
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 4: Error Screen -->
+        <div id="verify-step-error" class="hidden flex-col items-center justify-center p-10 w-full text-center">
+            <div
+                class="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-6 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
+                <iconify-icon icon="lucide:shield-alert" width="40"></iconify-icon>
+            </div>
+            <h3 class="text-2xl font-semibold text-white mb-2">Assinatura Inválida</h3>
+            <p class="text-sm text-neutral-400 mb-8">O documento sofreu alterações após a assinatura ou o certificado
+                foi revogado.</p>
+
+            <div class="w-full bg-red-500/5 border border-red-500/10 rounded-2xl p-6 text-left mb-8">
+                <div class="flex items-start gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 shrink-0 mt-0.5">
+                        <iconify-icon icon="lucide:file-warning" width="16"></iconify-icon>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-white/90 mb-1">Motivo da Rejeição:</p>
+                        <p class="text-sm text-red-400/80 leading-relaxed">
+                            Incompatibilidade no Hash (SHA-256). O conteúdo do arquivo não coincide com a assinatura
+                            criptográfica original registrada.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                <button
+                    class="btn-voltar-verificacao px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors font-medium">
+                    Voltar à Lista
+                </button>
+                <button
+                    class="px-6 py-2.5 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors font-medium flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+                    <iconify-icon icon="lucide:alert-circle" width="18"></iconify-icon>
+                    Ver Detalhes do Erro
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Blockchain Modal -->
+<div id="blockchain-modal-overlay"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+    <!-- Modal Content -->
+    <div id="blockchain-modal"
+        class="glass-panel bg-slate-900/90 rounded-3xl w-full max-w-2xl border border-white/10 shadow-2xl scale-95 transition-transform duration-300 flex flex-col max-h-[85vh] relative overflow-hidden">
+
+        <!-- STEP 1: Document List -->
+        <div id="blockchain-step-list" class="flex flex-col w-full h-full">
+            <!-- Modal Header -->
+            <div class="p-6 border-b border-white/5 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div
+                        class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                        <iconify-icon icon="lucide:link" width="20"></iconify-icon>
+                    </div>
+                    <div>
+                        <h2 class="text-xl font-semibold text-white">Verificar na Blockchain</h2>
+                        <p class="text-sm text-neutral-400">Selecione o documento para buscar na rede</p>
+                    </div>
+                </div>
+                <button id="close-blockchain-modal"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center">
+                    <iconify-icon icon="lucide:x" width="16"></iconify-icon>
+                </button>
+            </div>
+
+            <!-- Modal Search Bar -->
+            <div class="px-6 py-4 border-b border-white/5 shrink-0 bg-white/[0.02]">
+                <div class="relative w-full">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/40">
+                        <iconify-icon icon="lucide:search" width="18"></iconify-icon>
+                    </div>
+                    <input type="text" placeholder="Buscar documento na rede..."
+                        class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all">
+                </div>
+            </div>
+
+            <!-- Modal Body (Document List) -->
+            <div class="p-2 overflow-y-auto">
+                <ul class="space-y-1">
+                    <!-- Doc Item -->
+                    <li
+                        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                                <iconify-icon icon="lucide:file-text" width="20"></iconify-icon>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-white/90 truncate">Contrato_Prestacao_Servicos_v2.pdf
+                                </p>
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-medium uppercase tracking-wider">
+                                    <iconify-icon icon="lucide:shield-check" width="10"></iconify-icon>
+                                    Permissão: Leitura/Escrita
+                                </span>
+                            </div>
+                        </div>
+                        <button data-result="success"
+                            class="btn-start-blockchain shrink-0 px-4 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                            Buscar
+                            <iconify-icon icon="lucide:arrow-right" width="16"></iconify-icon>
+                        </button>
+                    </li>
+
+                    <!-- Doc Item -->
+                    <li
+                        class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div
+                                class="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
+                                <iconify-icon icon="lucide:file-type-2" width="20"></iconify-icon>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-white/90 truncate">Peticao_Inicial_Revisao.docx</p>
+                                <span
+                                    class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-md bg-sky-500/10 border border-sky-500/20 text-sky-400 text-[10px] font-medium uppercase tracking-wider">
+                                    <iconify-icon icon="lucide:eye" width="10"></iconify-icon>
+                                    Permissão: Apenas Leitura
+                                </span>
+                            </div>
+                        </div>
+                        <button data-result="error"
+                            class="btn-start-blockchain shrink-0 px-4 py-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                            Buscar
+                            <iconify-icon icon="lucide:arrow-right" width="16"></iconify-icon>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-white/5 bg-black/20 shrink-0 rounded-b-3xl text-center">
+                <p class="text-xs text-white/40">Apenas documentos registrados na rede Ethereum/Polygon são exibidos.
+                </p>
+            </div>
+        </div>
+
+        <!-- STEP 2: Scanning Animation -->
+        <div id="blockchain-step-scan"
+            class="hidden flex-col items-center justify-center p-12 w-full text-center py-20">
+            <div class="relative w-24 h-24 mb-6 flex items-center justify-center">
+                <div class="absolute inset-0 rounded-full border-4 border-emerald-500/20"></div>
+                <div
+                    class="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin">
+                </div>
+                <iconify-icon icon="lucide:box" width="32" class="text-emerald-400 animate-pulse"></iconify-icon>
+            </div>
+            <h3 class="text-xl font-semibold text-white mb-2">Procurando Transação...</h3>
+            <p class="text-sm text-neutral-400 max-w-sm mx-auto">Consultando os nós da rede Blockchain para validar a
+                integridade do arquivo.</p>
+        </div>
+
+        <!-- STEP 3: Success Screen -->
+        <div id="blockchain-step-success" class="hidden flex-col items-center justify-center p-10 w-full text-center">
+            <div
+                class="w-20 h-20 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+                <iconify-icon icon="lucide:check-square" width="40"></iconify-icon>
+            </div>
+            <h3 class="text-2xl font-semibold text-white mb-2">Registro Localizado</h3>
+            <p class="text-sm text-neutral-400 mb-8">O documento possui um registro imutável gravado na rede Blockchain.
+            </p>
+
+            <div class="w-full bg-white/5 border border-white/10 rounded-2xl p-6 text-left mb-8">
+                <div
+                    class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-4 border-b border-white/5 gap-4">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                            <iconify-icon icon="lucide:layers" width="20"></iconify-icon>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-white/90">Rede Polygon (MATIC)</p>
+                            <p class="text-xs text-white/50">Confirmações: 12.450 blocos</p>
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-xs font-medium uppercase tracking-wider">
+                        Validado
+                    </span>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-white/40">Data do Bloco:</span>
+                        <span class="text-white/80 font-medium">12/05/2026 às 14:35</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-white/40">Hash da Transação:</span>
+                        <span class="text-white/80 font-mono text-xs">0x7f2c...8a1b</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                <button
+                    class="btn-voltar-blockchain px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors font-medium">
+                    Voltar à Lista
+                </button>
+                <button
+                    class="px-6 py-2.5 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-400 hover:bg-sky-500/20 transition-colors font-medium flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(14,165,233,0.1)]">
+                    <iconify-icon icon="lucide:external-link" width="18"></iconify-icon>
+                    Ver no Explorer
+                </button>
+            </div>
+        </div>
+
+        <!-- STEP 4: Error Screen -->
+        <div id="blockchain-step-error" class="hidden flex-col items-center justify-center p-10 w-full text-center">
+            <div
+                class="w-20 h-20 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-6 shadow-[0_0_40px_rgba(239,68,68,0.2)]">
+                <iconify-icon icon="lucide:unlink" width="40"></iconify-icon>
+            </div>
+            <h3 class="text-2xl font-semibold text-white mb-2">Registro não encontrado</h3>
+            <p class="text-sm text-neutral-400 mb-8">Nenhum registro correspondente foi localizado na rede Blockchain.
+            </p>
+
+            <div class="w-full bg-red-500/5 border border-red-500/10 rounded-2xl p-6 text-left mb-8">
+                <div class="flex items-start gap-3">
+                    <div
+                        class="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center text-red-400 shrink-0 mt-0.5">
+                        <iconify-icon icon="lucide:file-warning" width="16"></iconify-icon>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-white/90 mb-1">Causa provável:</p>
+                        <p class="text-sm text-red-400/80 leading-relaxed">
+                            O documento ainda não foi registrado no contrato inteligente ou o hash atual difere do
+                            documento original enviado à rede.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-4 w-full justify-center">
+                <button
+                    class="btn-voltar-blockchain px-6 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-colors font-medium">
+                    Voltar à Lista
+                </button>
+                <button
+                    class="px-6 py-2.5 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors font-medium flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+                    <iconify-icon icon="lucide:upload-cloud" width="18"></iconify-icon>
+                    Registrar Agora
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Dropdown de Opções -->
+<div id="options-dropdown"
+    class="hidden absolute z-[100] w-48 glass-panel bg-slate-900/90 border border-white/10 rounded-xl shadow-2xl py-2 flex-col transform opacity-0 scale-95 transition-all duration-200 origin-top-right">
+    <button
+        class="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-3">
+        <iconify-icon icon="lucide:eye" width="16" class="text-white/50"></iconify-icon>
+        Visualizar
+    </button>
+    <button
+        class="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-3">
+        <iconify-icon icon="lucide:share-2" width="16" class="text-white/50"></iconify-icon>
+        Compartilhar
+    </button>
+    <button
+        class="w-full text-left px-4 py-2.5 text-sm text-white/80 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-3">
+        <iconify-icon icon="lucide:pen-tool" width="16" class="text-white/50"></iconify-icon>
+        Assinar
+    </button>
+    <div class="h-px bg-white/10 my-1 mx-2"></div>
+    <button
+        class="w-full text-left px-4 py-2.5 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors flex items-center gap-3">
+        <iconify-icon icon="lucide:trash-2" width="16"></iconify-icon>
+        Excluir
+    </button>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/index.js', v='20260530-1') }}"></script>
+
+
+{% endblock %}

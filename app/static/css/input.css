@@ -411,6 +411,12 @@ html[data-theme='light'] .nav-link.active {
     animation: float 6s ease-in-out infinite;
 }
 
+.upload-zone.dragover {
+    border-color: #0ea5e9 !important;
+    background-color: rgba(14, 165, 233, 0.1) !important;
+    transform: scale(1.02);
+}
+
 /* Custom input autofill styles */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

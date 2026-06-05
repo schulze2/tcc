@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% from "components/ui.html" import background_grid, theme_switcher, brand_mark %}
+{% from "components/sidebar.html" import sidebar_navigation %}
+
+{% block content %}
+{{ background_grid() }}
+
+<div class="flex h-screen w-full relative z-10">
+    {{ sidebar_navigation(usuario, 'documentos', url_for('auth.logout')) }}
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto p-6 md:p-8 pt-24 md:pt-8 relative w-full flex flex-col">
+        <header class="mb-8 flex items-center gap-4 shrink-0">
+            <a href="documentos.html"
+                class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
+                <iconify-icon icon="lucide:arrow-left" width="20"></iconify-icon>
+            </a>
+            <div>
+                <h1 class="text-3xl font-semibold tracking-tighter text-white">Novo Documento</h1>
+                <p class="text-sm text-neutral-400 mt-1">Faça upload do arquivo e configure os signatários (Criptografia
+                    ECC).</p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0 pb-8">
+
+            <!-- Lado Esquerdo: Área de Upload -->
+            <div
+                class="glass-panel rounded-3xl border border-white/10 flex flex-col relative overflow-hidden group w-full h-full min-h-[400px]">
+                <!-- Bordas animadas no hover -->
+                <div class="upload-zone absolute inset-0 border-2 border-dashed border-white/10 rounded-3xl transition-all duration-300 m-4 flex flex-col justify-center items-center"
+                    id="drop-zone">
+
+                    <div id="upload-idle" class="flex flex-col items-center text-center transition-all duration-300">
+                        <div
+                            class="w-20 h-20 rounded-full bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400 mb-6 group-hover:scale-110 group-hover:bg-sky-500/20 transition-all duration-500 shadow-[0_0_40px_rgba(14,165,233,0.1)]">
+                            <iconify-icon icon="lucide:cloud-upload" width="40"></iconify-icon>
+                        </div>
+                        <h3 class="text-xl font-semibold text-white mb-2">Arraste seu documento aqui</h3>
+                        <p class="text-sm text-neutral-400 mb-6 max-w-xs">Suporta arquivos PDF ou DOCX. Tamanho máximo:
+                            50MB.</p>
+
+                        <label
+                            class="px-6 py-3 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-400 font-medium hover:bg-sky-500/20 transition-colors cursor-pointer shadow-[0_0_20px_rgba(14,165,233,0.1)]">
+                            Procurar Arquivo
+                            <input type="file" id="file-input" class="hidden" accept=".pdf,.docx" />
+                        </label>
+                    </div>
+
+                    <!-- Document Viewer (Upload Success) -->
+                    <div id="upload-success"
+                        class="hidden flex-col transition-all duration-300 w-full h-full absolute inset-0 bg-black/40 backdrop-blur-md rounded-3xl z-20">
+                        <!-- Header Toolbar -->
+                        <div
+                            class="h-14 border-b border-white/10 flex items-center justify-between px-4 bg-white/5 shrink-0 rounded-t-3xl">
+                            <div class="flex items-center gap-3 min-w-0 flex-1">
+                                <div
+                                    class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                                    <iconify-icon icon="lucide:file-check-2" width="16"></iconify-icon>
+                                </div>
+                                <span class="text-sm font-medium text-white truncate"
+                                    id="file-name">Contrato_Final.pdf</span>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0 ml-4">
+                                <button id="btn-remove-file"
+                                    class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-red-500/20 text-red-400 hover:text-red-300 transition-colors"
+                                    title="Remover Documento">
+                                    <iconify-icon icon="lucide:trash-2" width="16"></iconify-icon>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Real Document Viewer Area -->
+                        <div class="flex-1 w-full relative">
+                            <iframe id="pdf-frame" src=""
+                                class="w-full h-full border-0 rounded-b-3xl bg-white"></iframe>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Lado Direito: Configuração de Assinatura -->
+            <div class="glass-panel rounded-3xl border border-white/10 flex flex-col h-full overflow-hidden">
+
+                <div class="p-6 border-b border-white/5 shrink-0 flex items-center gap-3 bg-white/[0.01]">
+                    <div
+                        class="w-10 h-10 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                        <iconify-icon icon="lucide:users" width="20"></iconify-icon>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-white">Configuração de Assinatura</h2>
+                        <p class="text-xs text-neutral-400">Defina quem irá assinar este documento</p>
+                    </div>
+                </div>
+
+                <div class="p-6 flex-1 overflow-y-auto">
+                    <!-- Segurança ECC Card -->
+                    <div
+                        class="w-full bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5 mb-8 flex items-start gap-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+                        <div
+                            class="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400 shrink-0">
+                            <iconify-icon icon="lucide:shield-check" width="20"></iconify-icon>
+                        </div>
+                        <div>
+                            <h4 class="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+                                Segurança Ativa: Criptografia ECC
+                                <span
+                                    class="px-2 py-0.5 rounded text-[10px] bg-emerald-500/20 text-emerald-400 uppercase tracking-wider font-bold">Máxima</span>
+                            </h4>
+                            <p class="text-xs text-emerald-400/80 leading-relaxed">
+                                Este documento será assinado utilizando Curvas Elípticas (ECC).
+                                Cada signatário precisará de uma <strong>chave privada protegida por senha</strong> para
+                                concluir a assinatura.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Número de Signatários -->
+                    <div
+                        class="mb-6 flex items-center justify-between bg-black/20 p-4 rounded-2xl border border-white/5">
+                        <div>
+                            <label class="block text-sm font-medium text-white/90">Quantas pessoas vão assinar?</label>
+                            <span class="text-xs text-white/40 mt-0.5 block">Adicione todos os envolvidos.</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <button id="btn-minus-signer"
+                                class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+                                <iconify-icon icon="lucide:minus" width="16"></iconify-icon>
+                            </button>
+                            <span id="signer-count"
+                                class="text-2xl font-semibold text-white w-8 text-center font-mono">1</span>
+                            <button id="btn-plus-signer"
+                                class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-colors shadow-sm">
+                                <iconify-icon icon="lucide:plus" width="16"></iconify-icon>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Container para a lista gerada via JS -->
+                    <div id="signers-container" class="space-y-4">
+                        <!-- Os cartões de signatários serão injetados aqui via Javascript -->
+                    </div>
+                </div>
+
+                <!-- Footer / Botão Finalizar -->
+                <div class="p-6 border-t border-white/5 bg-black/20 shrink-0 rounded-b-3xl">
+                    <button id="btn-finalizar"
+                        class="btn-glow group w-full overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.5)] hover:-translate-y-0.5 rounded-xl p-[1px] relative mt-2">
+                        <span class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            style="background: radial-gradient(150px circle at var(--x, 50%) var(--y, 50%), #0ea5e9, #38bdf8, transparent 60%);"></span>
+                        <span
+                            class="absolute inset-0 bg-sky-500/80 group-hover:opacity-0 transition-opacity duration-300"></span>
+                        <span
+                            class="flex items-center justify-center gap-2 transition-all duration-300 group-hover:bg-black/40 text-sm font-semibold text-white w-full h-full rounded-xl px-8 py-3.5 relative backdrop-blur-xl border border-white/10">
+                            Preparar para Assinatura
+                            <iconify-icon class="transition-transform duration-300 group-hover:translate-x-1"
+                                icon="lucide:arrow-right" width="18"></iconify-icon>
+                        </span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+
+
+<!-- Modal de Autenticação ECC -->
+<div id="ecc-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4">
+    <!-- Backdrop -->
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-md" id="ecc-backdrop"></div>
+
+    <!-- Modal Container -->
+    <div class="glass-panel bg-slate-900/90 w-full max-w-md border border-white/10 rounded-3xl p-8 relative z-10 transform scale-95 opacity-0 transition-all duration-300 shadow-2xl"
+        id="ecc-content">
+
+        <!-- Glowing background effect -->
+        <div
+            class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-32 bg-emerald-500/20 blur-[60px] rounded-full pointer-events-none">
+        </div>
+
+        <div class="relative z-10 flex flex-col items-center text-center">
+            <div
+                class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400/20 to-teal-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-6 shadow-[0_0_40px_rgba(16,185,129,0.2)]">
+                <iconify-icon icon="lucide:fingerprint" width="32"></iconify-icon>
+            </div>
+
+            <h3 class="text-2xl font-semibold text-white mb-2">Autenticação ECC</h3>
+            <p class="text-sm text-neutral-400 mb-8">Insira a senha da sua Chave Privada para assinar e criptografar o
+                documento digitalmente.</p>
+
+            <div class="w-full space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-medium text-white/70 ml-1 mb-2">Senha da Chave Privada</label>
+                    <div class="relative group">
+                        <div
+                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-white/40 group-focus-within:text-emerald-400 transition-colors">
+                            <iconify-icon icon="lucide:lock" width="18"></iconify-icon>
+                        </div>
+                        <input type="password" id="ecc-password" placeholder="••••••••"
+                            class="w-full bg-black/20 border border-white/10 rounded-xl py-3.5 pl-11 pr-4 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all">
+                    </div>
+                </div>
+
+                <!-- Success Message (Hidden by default) -->
+                <div id="ecc-success-msg"
+                    class="hidden items-center gap-2 text-emerald-400 text-sm bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-xl animate-[fadeIn_0.3s_ease-out]">
+                    <iconify-icon icon="lucide:check-circle-2" width="18" class="shrink-0"></iconify-icon>
+                    Documento criptografado e preparado com sucesso!
+                </div>
+
+                <div class="flex gap-3 mt-8" id="ecc-actions">
+                    <button id="btn-cancel-ecc"
+                        class="flex-1 py-3.5 rounded-xl border border-white/10 bg-white/5 text-white/80 font-medium hover:bg-white/10 transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="btn-confirm-ecc"
+                        class="btn-glow group flex-1 overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(16,185,129,0.5)] hover:-translate-y-0.5 rounded-xl p-[1px] relative">
+                        <span class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                            style="background: radial-gradient(120px circle at var(--x, 50%) var(--y, 50%), #10b981, #34d399, transparent 60%);"></span>
+                        <span
+                            class="absolute inset-0 bg-emerald-500/80 group-hover:opacity-0 transition-opacity duration-300"></span>
+                        <span
+                            class="flex items-center justify-center gap-2 transition-all duration-300 group-hover:bg-black/40 text-sm font-semibold text-white w-full h-full rounded-xl px-4 py-3.5 relative backdrop-blur-xl border border-white/10">
+                            Assinar
+                            <iconify-icon class="transition-transform duration-300 group-hover:translate-x-1"
+                                icon="lucide:check" width="18"></iconify-icon>
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/index.js', v='20260530-1') }}"></script>
+
+
+{% endblock %}
