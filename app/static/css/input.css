@@ -121,6 +121,10 @@ html[data-theme='light'] .bg-black\/40 {
     background-color: rgba(255, 255, 255, 0.7) !important;
 }
 
+html[data-theme='light'] .bg-black\/20 {
+    background-color: rgba(248, 250, 252, 0.72) !important;
+}
+
 html[data-theme='light'] .bg-black\/60 {
     background-color: rgba(255, 255, 255, 0.8) !important;
 }

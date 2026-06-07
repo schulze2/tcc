@@ -1,0 +1,104 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "hashArquivo",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "referenciaDocumento",
+        "type": "string"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "registradoPor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "dataRegistro",
+        "type": "uint256"
+      }
+    ],
+    "name": "DocumentoRegistrado",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hashArquivo",
+        "type": "bytes32"
+      }
+    ],
+    "name": "consultarDocumento",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "hashArquivo",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "referenciaDocumento",
+        "type": "string"
+      },
+      {
+        "internalType": "address",
+        "name": "registradoPor",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "dataRegistro",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hashArquivo",
+        "type": "bytes32"
+      }
+    ],
+    "name": "documentoExiste",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "_hashArquivo",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "_referenciaDocumento",
+        "type": "string"
+      }
+    ],
+    "name": "registrarDocumento",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

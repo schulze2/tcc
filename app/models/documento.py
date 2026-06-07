@@ -51,7 +51,7 @@ class Documento(db.Model):
         'Usuario', back_populates='documentos')
 
     prioridade: Mapped[str] = mapped_column(
-        String(20), nullable=False, default=0)
+        String(20), nullable=False, default="normal")
 
     cancelado_em: Mapped[datetime | None] = mapped_column(
         DateTime, nullable=True)
