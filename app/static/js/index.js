@@ -456,6 +456,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileNameDisplay = document.getElementById('file-name');
     const btnRemoveFile = document.getElementById('btn-remove-file');
     const pdfFrame = document.getElementById('pdf-frame');
+    const novoDocumentoForm = document.getElementById('novo-documento-form');
 
     let currentPdfUrl = null;
 
@@ -553,6 +554,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             resetUploadPreview();
+        });
+    }
+
+    if (novoDocumentoForm && fileInput) {
+        novoDocumentoForm.addEventListener('submit', (event) => {
+            if (!fileInput.files || fileInput.files.length === 0) {
+                event.preventDefault();
+                notifyToast('warning', 'Selecione um documento PDF antes de preparar para assinatura.');
+            }
         });
     }
 
@@ -784,6 +794,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const optionsDropdown = document.getElementById('options-dropdown');
     const optionsButtons = document.querySelectorAll('.btn-options-dropdown');
+    const dropdownViewDocument = document.getElementById('dropdown-view-document');
+    const dropdownShareDocument = document.getElementById('dropdown-share-document');
+    const dropdownSignDocument = document.getElementById('dropdown-sign-document');
+    const dropdownRejectDocument = document.getElementById('dropdown-reject-document');
+    const dropdownCancelDocument = document.getElementById('dropdown-cancel-document');
+    const dropdownActionForm = document.getElementById('dropdown-action-form');
     let activeOptionsButton = null;
 
     function hideOptionsDropdown() {
@@ -797,14 +813,32 @@ document.addEventListener('DOMContentLoaded', () => {
         activeOptionsButton = null;
     }
 
+    function setDropdownItemVisible(item, visible) {
+        if (!item) {
+            return;
+        }
+
+        item.classList.toggle('hidden', !visible);
+        item.classList.toggle('flex', visible);
+    }
+
+    function submitDropdownAction(actionUrl, confirmMessage) {
+        if (!dropdownActionForm || !actionUrl) {
+            return;
+        }
+
+        if (confirmMessage && !window.confirm(confirmMessage)) {
+            return;
+        }
+
+        dropdownActionForm.action = actionUrl;
+        dropdownActionForm.submit();
+    }
+
     if (optionsDropdown && optionsButtons.length > 0) {
         optionsButtons.forEach(button => {
             button.addEventListener('click', (event) => {
                 event.stopPropagation();
-
-                const rect = button.getBoundingClientRect();
-                optionsDropdown.style.top = `${window.scrollY + rect.bottom + 8}px`;
-                optionsDropdown.style.left = `${window.scrollX + rect.right - optionsDropdown.offsetWidth}px`;
 
                 if (activeOptionsButton === button) {
                     hideOptionsDropdown();
@@ -812,8 +846,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 activeOptionsButton = button;
+
+                setDropdownItemVisible(dropdownSignDocument, button.dataset.canSign === 'true');
+                setDropdownItemVisible(dropdownRejectDocument, button.dataset.canRecusar === 'true');
+                setDropdownItemVisible(dropdownCancelDocument, button.dataset.canCancel === 'true');
+
                 optionsDropdown.classList.remove('hidden');
                 optionsDropdown.classList.add('flex');
+
+                const rect = button.getBoundingClientRect();
+                const margin = 12;
+                const dropdownWidth = optionsDropdown.offsetWidth;
+                const dropdownHeight = optionsDropdown.offsetHeight;
+                const preferredLeft = window.scrollX + rect.right - dropdownWidth;
+                const maxLeft = window.scrollX + window.innerWidth - dropdownWidth - margin;
+                const minLeft = window.scrollX + margin;
+                const preferredTop = window.scrollY + rect.bottom + 8;
+                const maxTop = window.scrollY + window.innerHeight - dropdownHeight - margin;
+
+                optionsDropdown.style.left = `${Math.max(minLeft, Math.min(preferredLeft, maxLeft))}px`;
+                optionsDropdown.style.top = `${Math.max(window.scrollY + margin, Math.min(preferredTop, maxTop))}px`;
 
                 requestAnimationFrame(() => {
                     optionsDropdown.classList.remove('opacity-0', 'scale-95');
@@ -824,6 +876,138 @@ document.addEventListener('DOMContentLoaded', () => {
         document.addEventListener('click', (event) => {
             if (!optionsDropdown.contains(event.target)) {
                 hideOptionsDropdown();
+            }
+        });
+    }
+
+    if (dropdownViewDocument) {
+        dropdownViewDocument.addEventListener('click', () => {
+            if (!activeOptionsButton || !activeOptionsButton.dataset.viewUrl) {
+                return;
+            }
+
+            window.open(activeOptionsButton.dataset.viewUrl, '_blank');
+            hideOptionsDropdown();
+        });
+    }
+
+    if (dropdownShareDocument) {
+        dropdownShareDocument.addEventListener('click', () => {
+            notifyToast('info', 'Compartilhamento ainda não foi implementado para este documento.');
+            hideOptionsDropdown();
+        });
+    }
+
+    if (dropdownSignDocument) {
+        dropdownSignDocument.addEventListener('click', () => {
+            if (activeOptionsButton) {
+                openSignModal(activeOptionsButton);
+            }
+
+            hideOptionsDropdown();
+        });
+    }
+
+    if (dropdownRejectDocument) {
+        dropdownRejectDocument.addEventListener('click', () => {
+            if (!activeOptionsButton) {
+                return;
+            }
+
+            submitDropdownAction(
+                activeOptionsButton.dataset.recusarUrl,
+                'Deseja recusar este convite de assinatura?'
+            );
+        });
+    }
+
+    if (dropdownCancelDocument) {
+        dropdownCancelDocument.addEventListener('click', () => {
+            if (!activeOptionsButton) {
+                return;
+            }
+
+            submitDropdownAction(
+                activeOptionsButton.dataset.cancelUrl,
+                'Deseja cancelar este documento?'
+            );
+        });
+    }
+
+    const signModalOverlay = document.getElementById('sign-modal-overlay');
+    const signDocumentForm = document.getElementById('sign-document-form');
+    const signDocumentName = document.getElementById('sign-document-name');
+    const signAssinanteId = document.getElementById('sign-assinante-id');
+    const signPrivateKey = document.getElementById('sign-private-key');
+    const signPrivateKeyPassword = document.getElementById('sign-private-key-password');
+    const signModalButtons = document.querySelectorAll('.btn-open-sign-modal');
+    const closeSignModalButtons = document.querySelectorAll('#btn-close-sign-modal, #btn-cancel-sign-modal');
+
+    function openSignModal(button) {
+        if (!signModalOverlay || !signDocumentForm || !signAssinanteId) {
+            return;
+        }
+
+        const documentoId = button.dataset.documentoId;
+        const assinanteId = button.dataset.assinanteId;
+        const documentoNome = button.dataset.documentoNome || 'Documento selecionado';
+
+        if (!documentoId || !assinanteId) {
+            notifyToast('error', 'Não foi possível identificar o convite de assinatura.');
+            return;
+        }
+
+        signDocumentForm.action = `/documentos/${documentoId}/assinar`;
+        signAssinanteId.value = assinanteId;
+
+        if (signDocumentName) {
+            signDocumentName.textContent = documentoNome;
+        }
+
+        if (signPrivateKey) {
+            signPrivateKey.value = '';
+        }
+
+        if (signPrivateKeyPassword) {
+            signPrivateKeyPassword.value = '';
+        }
+
+        signModalOverlay.classList.remove('hidden');
+        void signModalOverlay.offsetWidth;
+        signModalOverlay.classList.remove('opacity-0');
+
+        if (signDocumentForm) {
+            signDocumentForm.classList.remove('scale-95');
+            signDocumentForm.classList.add('scale-100');
+        }
+    }
+
+    function closeSignModal() {
+        if (!signModalOverlay || !signDocumentForm) {
+            return;
+        }
+
+        signModalOverlay.classList.add('opacity-0');
+        signDocumentForm.classList.remove('scale-100');
+        signDocumentForm.classList.add('scale-95');
+
+        window.setTimeout(() => {
+            signModalOverlay.classList.add('hidden');
+        }, 300);
+    }
+
+    signModalButtons.forEach(button => {
+        button.addEventListener('click', () => openSignModal(button));
+    });
+
+    closeSignModalButtons.forEach(button => {
+        button.addEventListener('click', closeSignModal);
+    });
+
+    if (signModalOverlay) {
+        signModalOverlay.addEventListener('click', (event) => {
+            if (event.target === signModalOverlay) {
+                closeSignModal();
             }
         });
     }
@@ -886,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 300);
     }
 
-    if (btnFinalizar) {
+    if (btnFinalizar && !btnFinalizar.dataset.submitDocument) {
         btnFinalizar.addEventListener('click', openEccModal);
     }
 
@@ -1014,6 +1198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const signerCountDisplay = document.getElementById('signer-count');
     const signersContainer = document.getElementById('signers-container');
 
+    if (btnMinus && btnPlus && signerCountDisplay && signersContainer) {
     let numSigners = 1;
 
     function renderSigners() {
@@ -1036,7 +1221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/30">
                                             <iconify-icon icon="lucide:user" width="16"></iconify-icon>
                                         </div>
-                                        <input type="text" placeholder="Ex: Dr. Renato Silva" class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 transition-all text-sm">
+                                        <input type="text" name="assinantes_nome[]" required placeholder="Ex: Dr. Renato Silva" class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 transition-all text-sm">
                                     </div>
                                 </div>
                                 <div>
@@ -1045,7 +1230,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-white/30">
                                             <iconify-icon icon="lucide:mail" width="16"></iconify-icon>
                                         </div>
-                                        <input type="email" placeholder="exemplo@escritorio.adv.br" class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 transition-all text-sm">
+                                        <input type="email" name="assinantes_email[]" required placeholder="exemplo@escritorio.adv.br" class="w-full bg-black/20 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-white placeholder-white/30 focus:outline-none focus:border-sky-500/50 focus:ring-1 focus:ring-sky-500/50 transition-all text-sm">
                                     </div>
                                 </div>
                             </div>
@@ -1071,6 +1256,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial render
     renderSigners();
+    }
 
 
 });

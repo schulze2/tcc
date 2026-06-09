@@ -11,7 +11,7 @@
     <!-- Main Content Area -->
     <main class="flex-1 h-full overflow-y-auto p-6 md:p-8 pt-24 md:pt-8 relative w-full flex flex-col">
         <header class="mb-8 flex items-center gap-4 shrink-0">
-            <a href="documentos.html"
+            <a href="{{ url_for('documentos.index') }}"
                 class="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shadow-[0_2px_10px_rgba(0,0,0,0.1)]">
                 <iconify-icon icon="lucide:arrow-left" width="20"></iconify-icon>
             </a>
@@ -22,7 +22,8 @@
             </div>
         </header>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0 pb-8">
+        <form id="novo-documento-form" method="POST" action="{{ url_for('documentos.novo_documento') }}"
+            enctype="multipart/form-data" class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 min-h-0 pb-8">
 
             <!-- Lado Esquerdo: Área de Upload -->
             <div
@@ -37,13 +38,13 @@
                             <iconify-icon icon="lucide:cloud-upload" width="40"></iconify-icon>
                         </div>
                         <h3 class="text-xl font-semibold text-white mb-2">Arraste seu documento aqui</h3>
-                        <p class="text-sm text-neutral-400 mb-6 max-w-xs">Suporta arquivos PDF ou DOCX. Tamanho máximo:
+                        <p class="text-sm text-neutral-400 mb-6 max-w-xs">Suporta arquivos PDF. Tamanho máximo:
                             50MB.</p>
 
                         <label
                             class="px-6 py-3 rounded-xl border border-sky-500/30 bg-sky-500/10 text-sky-400 font-medium hover:bg-sky-500/20 transition-colors cursor-pointer shadow-[0_0_20px_rgba(14,165,233,0.1)]">
                             Procurar Arquivo
-                            <input type="file" id="file-input" class="hidden" accept=".pdf,.docx" />
+                            <input type="file" id="file-input" name="arquivo" class="hidden" accept=".pdf" required />
                         </label>
                     </div>
 
@@ -145,7 +146,7 @@
 
                 <!-- Footer / Botão Finalizar -->
                 <div class="p-6 border-t border-white/5 bg-black/20 shrink-0 rounded-b-3xl">
-                    <button id="btn-finalizar"
+                    <button id="btn-finalizar" type="submit" data-submit-document="true"
                         class="btn-glow group w-full overflow-hidden transition-all duration-300 hover:shadow-[0_0_30px_-5px_rgba(14,165,233,0.5)] hover:-translate-y-0.5 rounded-xl p-[1px] relative mt-2">
                         <span class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                             style="background: radial-gradient(150px circle at var(--x, 50%) var(--y, 50%), #0ea5e9, #38bdf8, transparent 60%);"></span>
@@ -161,7 +162,7 @@
                 </div>
             </div>
 
-        </div>
+        </form>
     </main>
 </div>
 

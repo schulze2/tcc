@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% from "components/ui.html" import background_grid, brand_mark %}
+
+{% block content %}
+{{ background_grid() }}
+
+<main class="min-h-screen relative z-10 flex items-center justify-center px-4 py-10">
+    <section class="glass-panel w-full max-w-3xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+        <div class="p-8 border-b border-white/5 bg-white/[0.02]">
+            <div class="flex items-start justify-between gap-6">
+                <div>
+                    {{ brand_mark(icon_width='22', icon_box_class='w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-sky-400 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]', text_class='text-xl font-semibold tracking-tight text-white/90') }}
+                    <h1 class="text-3xl font-semibold tracking-tighter text-white mt-8">Convite de Assinatura</h1>
+                    <p class="text-sm text-neutral-400 mt-2">Você foi convidado para assinar digitalmente este documento.</p>
+                </div>
+                <span
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-medium whitespace-nowrap">
+                    <iconify-icon icon="lucide:clock" width="13"></iconify-icon>
+                    {{ assinante.status|capitalize }}
+                </span>
+            </div>
+        </div>
+
+        <div class="p-8 space-y-6">
+            <div class="bg-black/20 border border-white/5 rounded-2xl p-5">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                        <iconify-icon icon="lucide:file-text" width="24"></iconify-icon>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-base font-medium text-white truncate">{{ documento.nome_arquivo_original }}</p>
+                        <p class="text-xs text-white/40 mt-1">Enviado por {{ documento.usuario.nome if documento.usuario else 'usuário do sistema' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                    <p class="text-xs text-white/40">Assinante</p>
+                    <p class="text-sm text-white/90 mt-1">{{ assinante.nome }}</p>
+                </div>
+                <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-4">
+                    <p class="text-xs text-white/40">E-mail do convite</p>
+                    <p class="text-sm text-white/90 mt-1">{{ assinante.email }}</p>
+                </div>
+            </div>
+
+            {% if not current_user.is_authenticated %}
+            <div class="bg-sky-500/5 border border-sky-500/20 rounded-2xl p-5">
+                <p class="text-sm text-sky-300 font-medium">Entre ou crie sua conta para assinar</p>
+                <p class="text-xs text-sky-200/70 mt-2 leading-relaxed">
+                    Use o mesmo e-mail do convite: {{ assinante.email }}.
+                </p>
+            </div>
+            <a href="{{ url_for('main.index') }}"
+                class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-sky-500/80 text-white text-sm font-semibold hover:bg-sky-500 transition-colors">
+                Acessar conta
+                <iconify-icon icon="lucide:arrow-right" width="16"></iconify-icon>
+            </a>
+            {% elif not usuario_autorizado %}
+            <div class="bg-red-500/5 border border-red-500/20 rounded-2xl p-5">
+                <p class="text-sm text-red-300 font-medium">Este convite pertence a outro usuário</p>
+                <p class="text-xs text-red-200/70 mt-2 leading-relaxed">
+                    Saia da conta atual e acesse com o e-mail {{ assinante.email }} para assinar este documento.
+                </p>
+            </div>
+            {% elif assinante.status == 'assinado' %}
+            <div class="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-5">
+                <p class="text-sm text-emerald-300 font-medium">Documento já assinado por você</p>
+            </div>
+            {% elif assinante.status in ['recusado', 'cancelado'] %}
+            <div class="bg-red-500/5 border border-red-500/20 rounded-2xl p-5">
+                <p class="text-sm text-red-300 font-medium">Este convite não está mais disponível para assinatura</p>
+            </div>
+            {% else %}
+            <div class="flex flex-col sm:flex-row gap-3">
+                <a href="{{ url_for('documentos.visualizar', documento_id=documento.id) }}" target="_blank"
+                    class="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-white/10 bg-white/5 text-white/85 text-sm font-medium hover:bg-white/10 transition-colors">
+                    <iconify-icon icon="lucide:eye" width="17"></iconify-icon>
+                    Visualizar PDF
+                </a>
+                <button type="button"
+                    class="btn-open-sign-modal flex-1 inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-sm font-medium hover:bg-emerald-500/20 transition-colors"
+                    data-documento-id="{{ documento.id }}"
+                    data-assinante-id="{{ assinante.id }}"
+                    data-documento-nome="{{ documento.nome_arquivo_original }}">
+                    <iconify-icon icon="lucide:pen-tool" width="17"></iconify-icon>
+                    Assinar
+                </button>
+                <form method="POST" action="{{ url_for('documentos.recusar_convite', assinante_id=assinante.id) }}" class="flex-1">
+                    <button type="submit"
+                        class="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-colors"
+                        onclick="return confirm('Deseja recusar este convite de assinatura?')">
+                        <iconify-icon icon="lucide:file-x-2" width="17"></iconify-icon>
+                        Recusar
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+</main>
+
+<div id="sign-modal-overlay"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden opacity-0 transition-opacity duration-300 flex items-center justify-center p-4">
+    <form id="sign-document-form" method="POST" enctype="multipart/form-data"
+        class="glass-panel bg-slate-900/90 rounded-3xl w-full max-w-md border border-white/10 shadow-2xl scale-95 transition-transform duration-300 relative overflow-hidden p-8">
+        <input type="hidden" id="sign-assinante-id" name="assinante_id">
+        <div class="relative z-10">
+            <div class="flex items-start justify-between gap-4 mb-6">
+                <div>
+                    <h2 class="text-xl font-semibold text-white">Assinar Documento</h2>
+                    <p id="sign-document-name" class="text-xs text-white/40 mt-1 truncate">Documento selecionado</p>
+                </div>
+                <button id="btn-close-sign-modal" type="button"
+                    class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:bg-white/10 transition-colors flex items-center justify-center shrink-0">
+                    <iconify-icon icon="lucide:x" width="16"></iconify-icon>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <input type="file" id="sign-private-key" name="chave_privada" accept=".pem" required
+                    class="block w-full text-sm text-white/70 file:mr-4 file:rounded-lg file:border-0 file:bg-emerald-500/10 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-emerald-400 hover:file:bg-emerald-500/20 bg-black/20 border border-white/10 rounded-xl p-2">
+                <input type="password" id="sign-private-key-password" name="senha_chave_privada" required
+                    placeholder="Senha da chave privada"
+                    class="w-full bg-black/20 border border-white/10 rounded-xl py-3.5 px-4 text-sm text-white placeholder-white/30 focus:outline-none focus:border-emerald-500/50">
+            </div>
+            <div class="flex gap-3 mt-8">
+                <button id="btn-cancel-sign-modal" type="button"
+                    class="flex-1 py-3.5 rounded-xl border border-white/10 bg-white/5 text-white/80 font-medium hover:bg-white/10 transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit"
+                    class="flex-1 py-3.5 rounded-xl bg-emerald-500/80 text-white font-semibold hover:bg-emerald-500 transition-colors">
+                    Assinar
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/index.js', v='20260530-1') }}"></script>
+{% endblock %}
