@@ -41,3 +41,20 @@ def assinar_hash(
     assinatura = assinador.sign(hash_obj)
 
     return base64.b64encode(assinatura).decode('utf-8')
+
+
+def verificar_assinatura_hash(
+        hash_assinado: str,
+        assinatura_digital: str,
+        chave_publica_pem: str
+) -> bool:
+
+    try:
+        chave_publica = ECC.import_key(chave_publica_pem)
+        hash_obj = SHA256.new(bytes.fromhex(hash_assinado))
+        assinatura = base64.b64decode(assinatura_digital)
+        verificador = DSS.new(chave_publica, 'fips-186-3')
+        verificador.verify(hash_obj, assinatura)
+        return True
+    except Exception:
+        return False

@@ -1,12 +1,14 @@
 import os
+from urllib.parse import urljoin
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_file, url_for
+from flask import Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_file, url_for
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 
 from app.extensions import db
 from app.models.assinante_documento import AssinanteDocumento
 from app.models.documento import Documento
+from app.models.registro_blockchain import RegistroBlockchain
 from app.services.assinante_service import (
     adicionar_assinante,
     buscar_assinante_por_token,
@@ -15,17 +17,38 @@ from app.services.assinante_service import (
     validar_usuario_do_convite,
 )
 from app.services.assinatura_service import assinar_documento
-from app.services.documento_service import cancelar_documento, salvar_documento_original
+from app.services.blockchain_service import consultar_documento_blockchain
+from app.services.crypto_services import verificar_assinatura_hash
+from app.services.documento_service import (
+    cancelar_documento,
+    finalizar_documento,
+    salvar_documento_original,
+    todos_assinantes_assinaram,
+)
+from app.services.hash_service import gerar_hash_arquivo
 from app.services.email_service import enviar_convite_assinatura
 
 documentos_bp = Blueprint("documentos", __name__, url_prefix="/documentos")
 
 
+def resolver_caminho_arquivo(caminho_arquivo: str | None) -> str | None:
+    if not caminho_arquivo:
+        return None
+
+    if os.path.isabs(caminho_arquivo):
+        return caminho_arquivo
+
+    base_dir = os.path.dirname(current_app.root_path)
+    return os.path.join(base_dir, caminho_arquivo)
+
+
 def formatar_tamanho_arquivo(caminho_arquivo: str | None) -> str:
-    if not caminho_arquivo or not os.path.exists(caminho_arquivo):
+    caminho_resolvido = resolver_caminho_arquivo(caminho_arquivo)
+
+    if not caminho_resolvido or not os.path.exists(caminho_resolvido):
         return "-"
 
-    tamanho = os.path.getsize(caminho_arquivo)
+    tamanho = os.path.getsize(caminho_resolvido)
 
     if tamanho < 1024:
         return f"{tamanho} B"
@@ -49,7 +72,7 @@ def montar_item_documento(documento: Documento, tipo: str, convite=None) -> dict
             "classe": "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400",
         },
         "registrado_blockchain": {
-            "texto": "Registrado",
+            "texto": "Finalizado e registrado",
             "icone": "lucide:link",
             "classe": "bg-sky-500/10 border border-sky-500/20 text-sky-400",
         },
@@ -75,7 +98,28 @@ def montar_item_documento(documento: Documento, tipo: str, convite=None) -> dict
         }
     )
 
-    if convite is not None:
+    todos_assinaram = todos_assinantes_assinaram(documento.id)
+    dono_pode_finalizar = (
+        tipo in ["proprietario", "proprietario_convite"]
+        and documento.status in ["aguardando_assinatura", "assinado"]
+        and todos_assinaram
+    )
+
+    if documento.status == "registrado_blockchain":
+        status = status_visual["registrado_blockchain"]
+    elif dono_pode_finalizar and documento.status == "assinado":
+        status = {
+            "texto": "Registro blockchain pendente",
+            "icone": "lucide:link",
+            "classe": "bg-amber-500/10 border border-amber-500/20 text-amber-400",
+        }
+    elif dono_pode_finalizar:
+        status = {
+            "texto": "Pronto para finalizar",
+            "icone": "lucide:file-check-2",
+            "classe": "bg-sky-500/10 border border-sky-500/20 text-sky-400",
+        }
+    elif convite is not None:
         status_convite = {
             "pendente": {
                 "texto": "Pendente",
@@ -115,8 +159,14 @@ def montar_item_documento(documento: Documento, tipo: str, convite=None) -> dict
         "data": criado_em.strftime("%d/%m/%Y %H:%M") if criado_em else "-",
         "autor": documento.usuario.nome if documento.usuario else "-",
         "pode_assinar": convite is not None and convite.status in ["pendente", "visualizado"],
-        "pode_cancelar": tipo in ["proprietario", "proprietario_convite"],
+        "pode_cancelar": (
+            tipo in ["proprietario", "proprietario_convite"]
+            and documento.status == "aguardando_assinatura"
+            and not todos_assinaram
+        ),
         "pode_recusar": convite is not None and convite.status in ["pendente", "visualizado"],
+        "pode_finalizar": dono_pode_finalizar,
+        "tem_pdf_assinado": bool(documento.caminho_arquivo_assinado),
     }
 
 
@@ -172,7 +222,7 @@ def enviar_email_convite(assinante: AssinanteDocumento) -> None:
 def index():
     documentos_criados = Documento.query.filter(
         Documento.usuario_id == current_user.id,
-        Documento.status.in_(["aguardando_assinatura", "assinado", "registrado_blockchain"])
+        Documento.status.in_(["aguardando_assinatura", "assinado", "registrado_blockchain", "recusado"])
     ).order_by(Documento.criado_em.desc()).all()
 
     convites = AssinanteDocumento.query.join(Documento).filter(
@@ -230,16 +280,241 @@ def visualizar(documento_id: int):
     if not usuario_pode_acessar_documento(documento_id):
         abort(403)
 
-    if not documento.caminho_arquivo or not os.path.exists(documento.caminho_arquivo):
+    caminho_visualizacao = resolver_caminho_arquivo(
+        documento.caminho_arquivo_assinado or documento.caminho_arquivo
+    )
+    nome_visualizacao = documento.nome_arquivo_assinado or documento.nome_arquivo_original
+
+    if not caminho_visualizacao or not os.path.exists(caminho_visualizacao):
         flash("Arquivo do documento não encontrado.", "error")
         return redirect(url_for("documentos.index"))
 
     return send_file(
-        documento.caminho_arquivo,
+        caminho_visualizacao,
         mimetype="application/pdf",
         as_attachment=False,
+        download_name=nome_visualizacao
+    )
+
+
+@documentos_bp.route("/<int:documento_id>/download/original")
+@login_required
+def download_original(documento_id: int):
+    documento = db.session.get(Documento, documento_id)
+
+    if not documento:
+        abort(404)
+
+    if not usuario_pode_acessar_documento(documento_id):
+        abort(403)
+
+    caminho = resolver_caminho_arquivo(documento.caminho_arquivo)
+
+    if not caminho or not os.path.exists(caminho):
+        flash("Arquivo original não encontrado.", "error")
+        return redirect(url_for("documentos.index"))
+
+    return send_file(
+        caminho,
+        mimetype="application/pdf",
+        as_attachment=True,
         download_name=documento.nome_arquivo_original
     )
+
+
+@documentos_bp.route("/<int:documento_id>/download/assinado")
+@login_required
+def download_assinado(documento_id: int):
+    documento = db.session.get(Documento, documento_id)
+
+    if not documento:
+        abort(404)
+
+    if not usuario_pode_acessar_documento(documento_id):
+        abort(403)
+
+    caminho = resolver_caminho_arquivo(documento.caminho_arquivo_assinado)
+
+    if not caminho or not os.path.exists(caminho):
+        flash("PDF assinado ainda não foi gerado.", "error")
+        return redirect(url_for("documentos.index"))
+
+    return send_file(
+        caminho,
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name=documento.nome_arquivo_assinado
+    )
+
+
+@documentos_bp.route("/<int:documento_id>/verificar")
+@login_required
+def verificar(documento_id: int):
+    documento = db.session.get(Documento, documento_id)
+
+    if not documento:
+        abort(404)
+
+    if not usuario_pode_acessar_documento(documento_id):
+        abort(403)
+
+    caminho_original = resolver_caminho_arquivo(documento.caminho_arquivo)
+    caminho_assinado = resolver_caminho_arquivo(documento.caminho_arquivo_assinado)
+    problemas = []
+
+    original_integro = False
+    if caminho_original and os.path.exists(caminho_original):
+        original_integro = gerar_hash_arquivo(caminho_original) == documento.hash_original
+    else:
+        problemas.append("Arquivo original não encontrado.")
+
+    assinado_integro = None
+    if documento.hash_arquivo_assinado:
+        if caminho_assinado and os.path.exists(caminho_assinado):
+            assinado_integro = gerar_hash_arquivo(caminho_assinado) == documento.hash_arquivo_assinado
+        else:
+            assinado_integro = False
+            problemas.append("PDF assinado não encontrado.")
+
+    detalhes_assinaturas = []
+
+    for assinatura in documento.assinaturas:
+        chave_publica = assinatura.chave_publica
+        assinatura_valida = bool(chave_publica) and verificar_assinatura_hash(
+            hash_assinado=assinatura.hash_assinatura,
+            assinatura_digital=assinatura.assinatura_digital,
+            chave_publica_pem=chave_publica.chave_publica
+        )
+
+        if assinatura.hash_assinatura != documento.hash_original:
+            assinatura_valida = False
+
+        if not assinatura_valida:
+            problemas.append(
+                f"Assinatura de {assinatura.assinante.email} inválida."
+            )
+
+        detalhes_assinaturas.append({
+            "assinante": assinatura.assinante.nome,
+            "email": assinatura.assinante.email,
+            "assinado_em": assinatura.assinado_em.strftime("%d/%m/%Y %H:%M:%S"),
+            "hash": assinatura.hash_assinatura,
+            "algoritmo": assinatura.algoritmo,
+            "valida": assinatura_valida,
+        })
+
+    if not detalhes_assinaturas:
+        problemas.append("Nenhuma assinatura digital registrada para este documento.")
+
+    valido = (
+        original_integro
+        and all(item["valida"] for item in detalhes_assinaturas)
+        and (assinado_integro is not False)
+    )
+
+    return jsonify({
+        "ok": valido,
+        "documento": documento.nome_arquivo_original,
+        "status": documento.status,
+        "hash_original": documento.hash_original,
+        "hash_assinado": documento.hash_arquivo_assinado,
+        "original_integro": original_integro,
+        "assinado_integro": assinado_integro,
+        "assinaturas": detalhes_assinaturas,
+        "problemas": problemas,
+    })
+
+
+@documentos_bp.route("/<int:documento_id>/blockchain/verificar")
+@login_required
+def verificar_blockchain(documento_id: int):
+    documento = db.session.get(Documento, documento_id)
+
+    if not documento:
+        abort(404)
+
+    if not usuario_pode_acessar_documento(documento_id):
+        abort(403)
+
+    if not documento.hash_arquivo_assinado:
+        return jsonify({
+            "ok": False,
+            "documento": documento.nome_arquivo_original,
+            "status": documento.status,
+            "problemas": ["Este documento ainda nao possui PDF assinado para consulta."],
+        }), 400
+
+    registro_local = RegistroBlockchain.query.filter_by(
+        documento_id=documento.id,
+        hash_registrado=documento.hash_arquivo_assinado
+    ).order_by(RegistroBlockchain.registrado_em.desc()).first()
+
+    def montar_url_explorer(tx_hash: str | None) -> str | None:
+        if not tx_hash:
+            return None
+
+        base_url = os.getenv(
+            "BLOCKCHAIN_EXPLORER_TX_URL",
+            "https://sepolia.etherscan.io/tx/"
+        )
+
+        return urljoin(base_url.rstrip("/") + "/", tx_hash)
+
+    def serializar_registro(registro):
+        if not registro:
+            return None
+
+        return {
+            "documento_ref": registro.documento_ref,
+            "hash_registrado": registro.hash_registrado,
+            "tx_hash": registro.tx_hash,
+            "endereco_contrato": registro.endereco_contrato,
+            "endereco_carteira": registro.endereco_carteira,
+            "numero_bloco": registro.numero_bloco,
+            "rede": registro.rede,
+            "status": registro.status,
+            "registrado_em": registro.registrado_em.strftime("%d/%m/%Y %H:%M:%S"),
+            "explorer_url": montar_url_explorer(registro.tx_hash),
+        }
+
+    problemas = []
+    resultado_rede = None
+
+    try:
+        resultado_rede = consultar_documento_blockchain(
+            documento.hash_arquivo_assinado
+        )
+    except Exception as e:
+        current_app.logger.exception(
+            "Falha ao consultar blockchain para documento %s",
+            documento_id
+        )
+        problemas.append(str(e))
+
+    hash_rede = (resultado_rede or {}).get("hash_arquivo")
+    hash_rede_normalizado = (hash_rede or "").lower().replace("0x", "")
+    hash_documento = documento.hash_arquivo_assinado.lower()
+    referencia_rede = (resultado_rede or {}).get("referencia_documento") or ""
+    encontrado_na_rede = (
+        bool(resultado_rede)
+        and hash_rede_normalizado == hash_documento
+        and bool(referencia_rede.strip())
+    )
+
+    if not encontrado_na_rede and not problemas:
+        problemas.append(
+            "Nenhum registro correspondente foi encontrado no contrato inteligente."
+        )
+
+    return jsonify({
+        "ok": encontrado_na_rede,
+        "documento": documento.nome_arquivo_original,
+        "status": documento.status,
+        "hash_assinado": documento.hash_arquivo_assinado,
+        "registro_local": serializar_registro(registro_local),
+        "registro_rede": resultado_rede,
+        "problemas": problemas,
+    })
 
 
 @documentos_bp.route("/convites/<token_convite>")
@@ -285,6 +560,47 @@ def cancelar(documento_id: int):
     except ValueError as e:
         db.session.rollback()
         flash(str(e), "error")
+
+    return redirect(url_for("documentos.index"))
+
+
+@documentos_bp.route("/<int:documento_id>/finalizar", methods=["POST"])
+@login_required
+def finalizar(documento_id: int):
+    documento = db.session.get(Documento, documento_id)
+
+    if not documento:
+        abort(404)
+
+    if documento.usuario_id != current_user.id:
+        abort(403)
+
+    try:
+        documento = finalizar_documento(documento_id)
+
+        if documento.status == "registrado_blockchain":
+            flash("Documento finalizado e registrado com sucesso.", "success")
+        else:
+            flash("Documento finalizado. Registro na blockchain pendente.", "warning")
+    except ConnectionError as e:
+        current_app.logger.exception(
+            "Blockchain indisponível ao finalizar documento %s",
+            documento_id
+        )
+        flash(
+            f"PDF assinado gerado, mas a blockchain está indisponível: {e}",
+            "warning"
+        )
+    except ValueError as e:
+        db.session.rollback()
+        flash(str(e), "error")
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception(
+            "Falha ao finalizar documento %s",
+            documento_id
+        )
+        flash("Não foi possível finalizar o documento agora.", "error")
 
     return redirect(url_for("documentos.index"))
 

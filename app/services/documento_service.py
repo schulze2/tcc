@@ -227,12 +227,12 @@ def finalizar_documento(documento_id: int) -> Documento:
 
     registro = RegistroBlockchain(
         documento_id=documento.id,
-        doc_ref=resultado_blockchain["referencia_documento"],
+        documento_ref=resultado_blockchain["referencia_documento"],
         hash_registrado=resultado_blockchain["hash_registrado"],
         tx_hash=resultado_blockchain["tx_hash"],
-        endereco_contrato=resultado_blockchain["endereco_contrato"],
-        endereco_carteira=resultado_blockchain["endereco_carteira"],
-        numero_bloco=resultado_blockchain.get("numero_bloco"),
+        endereco_contrato=resultado_blockchain["contract_address"],
+        endereco_carteira=resultado_blockchain["wallet_address"],
+        numero_bloco=resultado_blockchain.get("block_number"),
         rede=resultado_blockchain["rede"],
         status=resultado_blockchain["status"]
     )

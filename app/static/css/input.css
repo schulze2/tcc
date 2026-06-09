@@ -19,7 +19,7 @@ html[data-theme='light'] {
     --glass-border: rgba(0, 0, 0, 0.08);
     --grid-color: rgba(0, 0, 0, 0.04);
 
-    --bg-w-5: rgba(0, 0, 0, 0.03);
+    --bg-w-5: rgba(15, 23, 42, 0.045);
     --bg-w-10: rgba(0, 0, 0, 0.06);
     --bg-w-20: rgba(0, 0, 0, 0.12);
     --text-w-90: rgba(15, 23, 42, 0.9);
@@ -47,6 +47,10 @@ html[data-theme='light'] .bg-white\/5 {
     background-color: var(--bg-w-5) !important;
 }
 
+html[data-theme='light'] .bg-white\/\[0\.02\] {
+    background-color: rgba(15, 23, 42, 0.035) !important;
+}
+
 html[data-theme='light'] .bg-white\/10 {
     background-color: var(--bg-w-10) !important;
 }
@@ -63,12 +67,24 @@ html[data-theme='light'] .text-white\/80 {
     color: var(--text-w-80) !important;
 }
 
+html[data-theme='light'] .text-white\/75 {
+    color: rgba(15, 23, 42, 0.74) !important;
+}
+
 html[data-theme='light'] .text-white\/70 {
     color: var(--text-w-70) !important;
 }
 
 html[data-theme='light'] .text-white\/60 {
     color: var(--text-w-60) !important;
+}
+
+html[data-theme='light'] .text-white\/50 {
+    color: var(--text-w-50) !important;
+}
+
+html[data-theme='light'] .text-white\/45 {
+    color: rgba(15, 23, 42, 0.52) !important;
 }
 
 html[data-theme='light'] .text-white\/40 {
@@ -138,6 +154,10 @@ html[data-theme='light'] .hover\:bg-white\/5:hover {
     background-color: var(--bg-w-5) !important;
 }
 
+html[data-theme='light'] .hover\:bg-white\/10:hover {
+    background-color: var(--bg-w-10) !important;
+}
+
 
 html[data-theme='light'] .group:hover .group-hover\:text-white {
     color: var(--text-base) !important;
@@ -204,6 +224,27 @@ html[data-theme='light'] .theme-switcher-container .theme-btn {
 
 html[data-theme='light'] .theme-switcher-container .theme-btn:hover {
     color: #0f172a !important;
+}
+
+html[data-theme='light'] #verify-step-success .text-white\/90,
+html[data-theme='light'] #verify-step-error .text-white\/90 {
+    color: rgba(15, 23, 42, 0.9) !important;
+}
+
+html[data-theme='light'] #verify-step-success .text-white\/80,
+html[data-theme='light'] #verify-step-error .text-white\/80,
+html[data-theme='light'] #verify-step-success .text-white\/75,
+html[data-theme='light'] #verify-step-error .text-white\/75 {
+    color: rgba(15, 23, 42, 0.78) !important;
+}
+
+html[data-theme='light'] #verify-step-success .text-white\/50,
+html[data-theme='light'] #verify-step-error .text-white\/50,
+html[data-theme='light'] #verify-step-success .text-white\/45,
+html[data-theme='light'] #verify-step-error .text-white\/45,
+html[data-theme='light'] #verify-step-success .text-white\/40,
+html[data-theme='light'] #verify-step-error .text-white\/40 {
+    color: rgba(71, 85, 105, 0.92) !important;
 }
 
 :root {

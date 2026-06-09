@@ -576,6 +576,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const verifyStepError = document.getElementById('verify-step-error');
     const verifyButtons = document.querySelectorAll('.btn-start-verify');
     const verifyBackButtons = document.querySelectorAll('.btn-voltar-verificacao');
+    const verifyDocumentList = verifyStepList ? verifyStepList.querySelector('ul') : null;
+    const verifySearchInput = document.getElementById('verify-search-input');
 
     let verifyScanTimeoutId = null;
 
@@ -602,6 +604,140 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function renderVerifyDocumentList(searchTerm = '') {
+        if (!verifyDocumentList) {
+            return;
+        }
+
+        const normalizedSearch = searchTerm.trim().toLowerCase();
+        const documentButtons = Array.from(document.querySelectorAll('.btn-options-dropdown'))
+            .filter(button => button.dataset.verifyUrl)
+            .filter(button => {
+                if (!normalizedSearch) {
+                    return true;
+                }
+
+                return (button.dataset.documentoNome || '').toLowerCase().includes(normalizedSearch);
+            });
+
+        if (documentButtons.length === 0) {
+            verifyDocumentList.innerHTML = normalizedSearch
+                ? '<li class="p-8 text-center text-sm text-white/40">Nenhum documento encontrado para essa busca.</li>'
+                : '<li class="p-8 text-center text-sm text-white/40">Nenhum documento disponível para verificação.</li>';
+            return;
+        }
+
+        verifyDocumentList.innerHTML = documentButtons.map(button => `
+            <li class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl hover:bg-white/5 transition-colors group">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 shrink-0">
+                        <iconify-icon icon="lucide:file-text" width="20"></iconify-icon>
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-sm font-medium text-white/90 truncate">${button.dataset.documentoNome || 'Documento'}</p>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 mt-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[10px] font-medium uppercase tracking-wider">
+                            <iconify-icon icon="lucide:fingerprint" width="10"></iconify-icon>
+                            Verificação criptográfica
+                        </span>
+                    </div>
+                </div>
+                <button data-verify-url="${button.dataset.verifyUrl}" class="btn-start-verify shrink-0 px-4 py-2 rounded-xl border border-purple-500/30 bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+                    Verificar
+                    <iconify-icon icon="lucide:arrow-right" width="16"></iconify-icon>
+                </button>
+            </li>
+        `).join('');
+    }
+
+    function renderVerificationResult(data) {
+        const targetStep = data.ok ? verifyStepSuccess : verifyStepError;
+
+        if (!targetStep) {
+            return;
+        }
+
+        const title = targetStep.querySelector('h3');
+        const description = targetStep.querySelector('p');
+        const card = targetStep.querySelector('.w-full');
+
+        if (title) {
+            title.textContent = data.ok ? 'Assinatura Válida' : 'Assinatura Inválida';
+        }
+
+        if (description) {
+            description.textContent = data.ok
+                ? 'O documento possui assinaturas digitais autênticas e os arquivos salvos não foram adulterados.'
+                : 'A verificação encontrou inconsistências no documento ou nas assinaturas.';
+        }
+
+        if (!card) {
+            return;
+        }
+
+        const assinaturas = (data.assinaturas || []).map(assinatura => `
+            <div class="border-t border-white/5 first:border-t-0 py-3 first:pt-0 last:pb-0">
+                <div class="flex items-center justify-between gap-3">
+                    <div>
+                        <p class="text-sm font-medium text-white/90">${assinatura.assinante}</p>
+                        <p class="text-xs text-white/45">${assinatura.email}</p>
+                    </div>
+                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md ${assinatura.valida ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'} text-xs font-medium">
+                        <iconify-icon icon="${assinatura.valida ? 'lucide:check-circle-2' : 'lucide:x-circle'}" width="12"></iconify-icon>
+                        ${assinatura.valida ? 'Válida' : 'Inválida'}
+                    </span>
+                </div>
+                <div class="mt-2 space-y-1 text-xs">
+                    <p class="text-white/50">Assinado em: <span class="text-white/75">${assinatura.assinado_em}</span></p>
+                    <p class="text-white/50">Hash: <span class="text-white/75 font-mono break-all">${assinatura.hash}</span></p>
+                </div>
+            </div>
+        `).join('');
+
+        const problemas = (data.problemas || []).map(problema => (
+            `<li class="text-sm text-red-300/90">${problema}</li>`
+        )).join('');
+
+        card.innerHTML = `
+            <div class="space-y-3 mb-4">
+                <p class="text-sm text-white/80"><span class="text-white/40">Documento:</span> ${data.documento}</p>
+                <p class="text-sm text-white/80"><span class="text-white/40">Arquivo original:</span> ${data.original_integro ? 'Íntegro' : 'Inconsistente'}</p>
+                <p class="text-sm text-white/80"><span class="text-white/40">PDF assinado:</span> ${data.assinado_integro === null ? 'Não gerado' : (data.assinado_integro ? 'Íntegro' : 'Inconsistente')}</p>
+            </div>
+            <div class="space-y-1">${assinaturas || '<p class="text-sm text-white/45">Nenhuma assinatura registrada.</p>'}</div>
+            ${problemas ? `<ul class="list-disc pl-5 mt-4 space-y-1">${problemas}</ul>` : ''}
+        `;
+    }
+
+    async function verifyDocument(button) {
+        if (!button.dataset.verifyUrl) {
+            return;
+        }
+
+        setVerifyStep('scan');
+
+        try {
+            const response = await fetch(button.dataset.verifyUrl, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+            const data = await response.json();
+
+            renderVerificationResult(data);
+            setVerifyStep(data.ok ? 'success' : 'error');
+        } catch (error) {
+            renderVerificationResult({
+                ok: false,
+                documento: 'Documento',
+                original_integro: false,
+                assinado_integro: null,
+                assinaturas: [],
+                problemas: ['Não foi possível verificar o documento agora.'],
+            });
+            setVerifyStep('error');
+        }
+    }
+
     function openVerifyModal() {
         if (!verifyModalOverlay || !verifyModal) {
             return;
@@ -613,6 +749,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         setVerifyStep('list');
+        if (verifySearchInput) {
+            verifySearchInput.value = '';
+        }
+        renderVerifyDocumentList();
         verifyModalOverlay.classList.remove('hidden');
 
         requestAnimationFrame(() => {
@@ -653,20 +793,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    verifyButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            if (!verifyModal) {
-                return;
+    if (verifyDocumentList) {
+        verifyDocumentList.addEventListener('click', (event) => {
+            const button = event.target.closest('.btn-start-verify');
+
+            if (button) {
+                verifyDocument(button);
             }
-
-            const result = button.dataset.result === 'error' ? 'error' : 'success';
-            setVerifyStep('scan');
-
-            verifyScanTimeoutId = window.setTimeout(() => {
-                setVerifyStep(result);
-            }, 1400);
         });
-    });
+    }
+
+    if (verifySearchInput) {
+        verifySearchInput.addEventListener('input', () => {
+            renderVerifyDocumentList(verifySearchInput.value);
+        });
+    }
 
     verifyBackButtons.forEach(button => {
         button.addEventListener('click', () => {
@@ -687,8 +828,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const blockchainStepScan = document.getElementById('blockchain-step-scan');
     const blockchainStepSuccess = document.getElementById('blockchain-step-success');
     const blockchainStepError = document.getElementById('blockchain-step-error');
+    const blockchainSearchInput = document.getElementById('blockchain-search-input');
+    const blockchainDocumentItems = document.querySelectorAll('.blockchain-document-item');
     const blockchainButtons = document.querySelectorAll('.btn-start-blockchain');
     const blockchainBackButtons = document.querySelectorAll('.btn-voltar-blockchain');
+    const blockchainSuccessNetwork = document.getElementById('blockchain-success-network');
+    const blockchainSuccessStatus = document.getElementById('blockchain-success-status');
+    const blockchainSuccessDate = document.getElementById('blockchain-success-date');
+    const blockchainSuccessTx = document.getElementById('blockchain-success-tx');
+    const blockchainSuccessRef = document.getElementById('blockchain-success-ref');
+    const blockchainSuccessHash = document.getElementById('blockchain-success-hash');
+    const blockchainExplorerLink = document.getElementById('blockchain-explorer-link');
+    const blockchainErrorMessage = document.getElementById('blockchain-error-message');
 
     let blockchainScanTimeoutId = null;
 
@@ -766,18 +917,130 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function formatBlockchainValue(value, fallback = '-') {
+        return value || fallback;
+    }
+
+    function formatShortHash(value) {
+        if (!value) {
+            return '-';
+        }
+
+        if (value.length <= 24) {
+            return value;
+        }
+
+        return `${value.slice(0, 12)}...${value.slice(-10)}`;
+    }
+
+    function renderBlockchainSuccess(data) {
+        const localRecord = data.registro_local || {};
+        const networkRecord = data.registro_rede || {};
+
+        if (blockchainSuccessNetwork) {
+            blockchainSuccessNetwork.textContent = formatBlockchainValue(localRecord.rede, 'Sepolia/testnet');
+        }
+
+        if (blockchainSuccessStatus) {
+            blockchainSuccessStatus.textContent = `Status: ${formatBlockchainValue(localRecord.status, 'Confirmado')}`;
+        }
+
+        if (blockchainSuccessDate) {
+            blockchainSuccessDate.textContent = formatBlockchainValue(localRecord.registrado_em);
+        }
+
+        if (blockchainSuccessTx) {
+            blockchainSuccessTx.textContent = formatShortHash(localRecord.tx_hash);
+            blockchainSuccessTx.title = localRecord.tx_hash || '';
+        }
+
+        if (blockchainSuccessRef) {
+            const reference = localRecord.documento_ref || networkRecord.referencia_documento;
+            blockchainSuccessRef.textContent = formatBlockchainValue(reference);
+            blockchainSuccessRef.title = reference || '';
+        }
+
+        if (blockchainSuccessHash) {
+            const hash = localRecord.hash_registrado || data.hash_assinado || networkRecord.hash_arquivo;
+            blockchainSuccessHash.textContent = formatShortHash(hash);
+            blockchainSuccessHash.title = hash || '';
+        }
+
+        if (blockchainExplorerLink) {
+            if (localRecord.explorer_url) {
+                blockchainExplorerLink.href = localRecord.explorer_url;
+                blockchainExplorerLink.classList.remove('hidden');
+                blockchainExplorerLink.classList.add('flex');
+            } else {
+                blockchainExplorerLink.href = '#';
+                blockchainExplorerLink.classList.add('hidden');
+                blockchainExplorerLink.classList.remove('flex');
+            }
+        }
+    }
+
+    function renderBlockchainError(data) {
+        if (!blockchainErrorMessage) {
+            return;
+        }
+
+        const problemas = Array.isArray(data.problemas) ? data.problemas.filter(Boolean) : [];
+        blockchainErrorMessage.textContent = problemas.length > 0
+            ? problemas.join(' ')
+            : 'Nao foi possivel localizar um registro correspondente para este documento.';
+    }
+
+    if (blockchainSearchInput && blockchainDocumentItems.length > 0) {
+        blockchainSearchInput.addEventListener('input', () => {
+            const query = blockchainSearchInput.value.trim().toLowerCase();
+
+            blockchainDocumentItems.forEach(item => {
+                const name = item.dataset.documentName || '';
+                const visible = !query || name.includes(query);
+                item.classList.toggle('hidden', !visible);
+                item.classList.toggle('flex', visible);
+            });
+        });
+    }
+
     blockchainButtons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', async () => {
             if (!blockchainModal) {
                 return;
             }
 
-            const result = button.dataset.result === 'error' ? 'error' : 'success';
+            const url = button.dataset.blockchainUrl;
+
+            if (!url) {
+                notifyToast('error', 'Nao foi possivel identificar o documento para consulta.');
+                return;
+            }
+
             setBlockchainStep('scan');
 
-            blockchainScanTimeoutId = window.setTimeout(() => {
-                setBlockchainStep(result);
-            }, 1400);
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    renderBlockchainSuccess(data);
+                    setBlockchainStep('success');
+                    return;
+                }
+
+                renderBlockchainError(data);
+                setBlockchainStep('error');
+            } catch (error) {
+                renderBlockchainError({
+                    problemas: ['Nao foi possivel consultar a blockchain agora. Verifique a conexao RPC e tente novamente.'],
+                });
+                setBlockchainStep('error');
+            }
         });
     });
 
@@ -795,8 +1058,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const optionsDropdown = document.getElementById('options-dropdown');
     const optionsButtons = document.querySelectorAll('.btn-options-dropdown');
     const dropdownViewDocument = document.getElementById('dropdown-view-document');
-    const dropdownShareDocument = document.getElementById('dropdown-share-document');
+    const dropdownDownloadOriginal = document.getElementById('dropdown-download-original');
+    const dropdownDownloadSigned = document.getElementById('dropdown-download-signed');
     const dropdownSignDocument = document.getElementById('dropdown-sign-document');
+    const dropdownFinalizeDocument = document.getElementById('dropdown-finalize-document');
     const dropdownRejectDocument = document.getElementById('dropdown-reject-document');
     const dropdownCancelDocument = document.getElementById('dropdown-cancel-document');
     const dropdownActionForm = document.getElementById('dropdown-action-form');
@@ -847,7 +1112,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 activeOptionsButton = button;
 
+                setDropdownItemVisible(dropdownDownloadSigned, button.dataset.hasSignedPdf === 'true');
                 setDropdownItemVisible(dropdownSignDocument, button.dataset.canSign === 'true');
+                setDropdownItemVisible(dropdownFinalizeDocument, button.dataset.canFinalizar === 'true');
                 setDropdownItemVisible(dropdownRejectDocument, button.dataset.canRecusar === 'true');
                 setDropdownItemVisible(dropdownCancelDocument, button.dataset.canCancel === 'true');
 
@@ -891,9 +1158,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (dropdownShareDocument) {
-        dropdownShareDocument.addEventListener('click', () => {
-            notifyToast('info', 'Compartilhamento ainda não foi implementado para este documento.');
+    if (dropdownDownloadOriginal) {
+        dropdownDownloadOriginal.addEventListener('click', () => {
+            if (!activeOptionsButton || !activeOptionsButton.dataset.downloadOriginalUrl) {
+                return;
+            }
+
+            window.location.href = activeOptionsButton.dataset.downloadOriginalUrl;
+            hideOptionsDropdown();
+        });
+    }
+
+    if (dropdownDownloadSigned) {
+        dropdownDownloadSigned.addEventListener('click', () => {
+            if (!activeOptionsButton || !activeOptionsButton.dataset.downloadAssinadoUrl) {
+                return;
+            }
+
+            window.location.href = activeOptionsButton.dataset.downloadAssinadoUrl;
             hideOptionsDropdown();
         });
     }
@@ -905,6 +1187,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             hideOptionsDropdown();
+        });
+    }
+
+    if (dropdownFinalizeDocument) {
+        dropdownFinalizeDocument.addEventListener('click', () => {
+            if (!activeOptionsButton) {
+                return;
+            }
+
+            submitDropdownAction(
+                activeOptionsButton.dataset.finalizarUrl,
+                'Todos os assinantes já assinaram. Deseja finalizar e registrar este documento?'
+            );
         });
     }
 

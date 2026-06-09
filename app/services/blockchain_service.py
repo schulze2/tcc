@@ -117,8 +117,13 @@ def registrar_documento_blockchain(
         private_key=chave_privada
     )
 
+    if hasattr(transacao_assinada, "raw_transaction"):
+        transacao_raw = transacao_assinada.raw_transaction
+    else:
+        transacao_raw = transacao_assinada.rawTransaction
+
     tx_hash = web3.eth.send_raw_transaction(
-        transacao_assinada.rawTransaction
+        transacao_raw
     )
 
     recibo = web3.eth.wait_for_transaction_receipt(tx_hash)
