@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from app.models.usuario import Usuario
 from app.models.chave_publica import ChavePublica
 from app.services.crypto_services import gerar_chave_eccdsa
+from app.services.assinante_service import vincular_convites_pendentes_usuario
 
 from app.extensions import db
 
@@ -37,6 +38,8 @@ def criar_usuario(nome, email, oab, senha, cargo, senha_chave):
         db.session.add(usuario)
         db.session.add(chave_publica)
         db.session.commit()
+
+        vincular_convites_pendentes_usuario(usuario)
 
         return usuario, chave_privada_pem
 
