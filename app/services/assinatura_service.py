@@ -104,6 +104,11 @@ def listar_assinaturas_por_documento(documento_id: int) -> list[Assinatura]:
     return Assinatura.query.filter_by(documento_id=documento_id).all()
 
 
+def listar_assinaturas_documento(documento_id: int) -> list[Assinatura]:
+
+    return listar_assinaturas_por_documento(documento_id)
+
+
 def buscar_assinatura_por_id(assinatura_id: int) -> Assinatura:
 
     assinatura = db.session.get(Assinatura, assinatura_id)

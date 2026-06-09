@@ -8,6 +8,7 @@ from app.extensions import db
 from app.models.documento import Documento
 from app.models.assinante_documento import AssinanteDocumento
 from app.models.registro_blockchain import RegistroBlockchain
+from app.services.pdf_service import gerar_pdf_assinado_com_certificado
 
 from app.services.hash_service import gerar_hash_arquivo
 
@@ -94,11 +95,11 @@ def validar_documento_para_assinatura(documento: Documento) -> None:
     if documento.status in ["cancelado", "recusado"]:
         raise ValueError("Este documento não pode ser assinado.")
 
-    if documento.status in ["assinado", "registrado_blockchain"]:
-        raise ValueError("Este documento já foi finalizado.")
+    if documento.status == "registrado_blockchain":
+        raise ValueError("Documento já foi registrado na blockchain.")
 
-    if documento.status != "aguardando_assinatura":
-        raise ValueError("Documento não está disponível para assinatura.")
+    if documento.status not in ["aguardando_assinatura", "assinado"]:
+        raise ValueError("Documento nãop pode ser finalizado neste status.")
 
 
 def validar_documento_para_finalizacao(documento: Documento) -> None:
@@ -194,5 +195,51 @@ def atualizar_documento_assinado(
 
 
 def finalizar_documento(documento_id: int) -> Documento:
+    from app.services.assinatura_service import listar_assinaturas_documento
+    from app.services.blockchain_service import registrar_documento_blockchain
 
-    pass
+    documento = buscar_documento_por_id(documento_id)
+
+    validar_documento_para_finalizacao(documento)
+
+    if not todos_assinantes_assinaram(documento_id):
+        raise ValueError("Ainda existem assinantes pendentes.")
+
+    assinaturas = listar_assinaturas_documento(documento_id)
+
+    nome_pdf_assinado, caminho_pdf_assinado = gerar_pdf_assinado_com_certificado(
+        documento=documento,
+        assinaturas=assinaturas
+    )
+
+    documento = atualizar_documento_assinado(
+        documento=documento,
+        caminho_pdf_assinado=caminho_pdf_assinado,
+        nome_pdf_assinado=nome_pdf_assinado
+    )
+
+    referencia_documento = f"DOC-{documento.id}"
+
+    resultado_blockchain = registrar_documento_blockchain(
+        hash_arquivo_assinado=documento.hash_arquivo_assinado,
+        referencia_documento=referencia_documento
+    )
+
+    registro = RegistroBlockchain(
+        documento_id=documento.id,
+        doc_ref=resultado_blockchain["referencia_documento"],
+        hash_registrado=resultado_blockchain["hash_registrado"],
+        tx_hash=resultado_blockchain["tx_hash"],
+        endereco_contrato=resultado_blockchain["endereco_contrato"],
+        endereco_carteira=resultado_blockchain["endereco_carteira"],
+        numero_bloco=resultado_blockchain.get("numero_bloco"),
+        rede=resultado_blockchain["rede"],
+        status=resultado_blockchain["status"]
+    )
+
+    documento.status = "registrado_blockchain"
+
+    db.session.add(registro)
+    db.session.commit()
+
+    return documento
