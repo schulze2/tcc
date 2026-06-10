@@ -87,6 +87,28 @@ def montar_item_documento(documento: Documento, tipo: str, convite=None) -> dict
             "classe": "bg-red-500/10 border border-red-500/20 text-red-400",
         },
     }
+    prioridade_visual = {
+        "baixa": {
+            "texto": "Baixa",
+            "icone": "lucide:chevron-down",
+            "classe": "bg-slate-500/10 border border-slate-500/20 text-slate-300",
+        },
+        "normal": {
+            "texto": "Normal",
+            "icone": "lucide:minus",
+            "classe": "bg-white/5 border border-white/10 text-white/60",
+        },
+        "alta": {
+            "texto": "Alta",
+            "icone": "lucide:chevron-up",
+            "classe": "bg-amber-500/10 border border-amber-500/20 text-amber-400",
+        },
+        "urgente": {
+            "texto": "Urgente",
+            "icone": "lucide:flame",
+            "classe": "bg-red-500/10 border border-red-500/20 text-red-400",
+        },
+    }
 
     criado_em = documento.criado_em
     status = status_visual.get(
@@ -155,6 +177,10 @@ def montar_item_documento(documento: Documento, tipo: str, convite=None) -> dict
         "tipo": tipo,
         "nome": documento.nome_arquivo_original,
         "status": status,
+        "prioridade": prioridade_visual.get(
+            documento.prioridade or "normal",
+            prioridade_visual["normal"]
+        ),
         "tamanho": formatar_tamanho_arquivo(documento.caminho_arquivo),
         "data": criado_em.strftime("%d/%m/%Y %H:%M") if criado_em else "-",
         "autor": documento.usuario.nome if documento.usuario else "-",

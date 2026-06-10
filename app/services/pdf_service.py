@@ -45,6 +45,16 @@ def garantir_espaco(doc, pagina, y: int):
     return pagina, y
 
 
+def abreviar_valor(valor: str | None, inicio: int = 24, fim: int = 16) -> str:
+    if not valor:
+        return "-"
+
+    if len(valor) <= inicio + fim + 3:
+        return valor
+
+    return f"{valor[:inicio]}...{valor[-fim:]}"
+
+
 def gerar_pdf_assinado_com_certificado(documento, assinaturas: list) -> tuple[str, str]:
     criar_pasta_saida()
 
@@ -113,7 +123,8 @@ def gerar_pdf_assinado_com_certificado(documento, assinaturas: list) -> tuple[st
                 f"E-mail: {assinante.email}",
                 f"Data/Hora da assinatura: {assinatura.assinado_em.strftime('%d/%m/%Y %H:%M:%S')}",
                 f"Algoritmo: {assinatura.algoritmo}",
-                f"Hash assinado: {assinatura.hash_assinatura}",
+                f"Hash do documento assinado: {assinatura.hash_assinatura}",
+                f"Assinatura digital: {abreviar_valor(assinatura.assinatura_digital)}",
                 f"Chave pública ID: {assinatura.chave_publica_id}",
             ]
 
