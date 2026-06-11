@@ -248,7 +248,8 @@ def enviar_email_convite(assinante: AssinanteDocumento) -> None:
 def index():
     documentos_criados = Documento.query.filter(
         Documento.usuario_id == current_user.id,
-        Documento.status.in_(["aguardando_assinatura", "assinado", "registrado_blockchain", "recusado"])
+        Documento.status.in_(
+            ["aguardando_assinatura", "assinado", "registrado_blockchain", "recusado"])
     ).order_by(Documento.criado_em.desc()).all()
 
     convites = AssinanteDocumento.query.join(Documento).filter(
@@ -256,8 +257,10 @@ def index():
             AssinanteDocumento.usuario_id == current_user.id,
             AssinanteDocumento.email == current_user.email.lower().strip()
         ),
-        AssinanteDocumento.status.in_(["pendente", "visualizado", "assinado", "recusado"]),
-        Documento.status.in_(["aguardando_assinatura", "assinado", "registrado_blockchain", "recusado"])
+        AssinanteDocumento.status.in_(
+            ["pendente", "visualizado", "assinado", "recusado"]),
+        Documento.status.in_(
+            ["aguardando_assinatura", "assinado", "registrado_blockchain", "recusado"])
     ).order_by(AssinanteDocumento.convidado_em.desc()).all()
 
     documentos_por_id = {
@@ -270,7 +273,8 @@ def index():
 
         if item_existente:
             item_existente["convite"] = convite
-            item_existente["pode_assinar"] = convite.status in ["pendente", "visualizado"]
+            item_existente["pode_assinar"] = convite.status in [
+                "pendente", "visualizado"]
             item_existente["tipo"] = "proprietario_convite"
             continue
 
@@ -385,19 +389,22 @@ def verificar(documento_id: int):
         abort(403)
 
     caminho_original = resolver_caminho_arquivo(documento.caminho_arquivo)
-    caminho_assinado = resolver_caminho_arquivo(documento.caminho_arquivo_assinado)
+    caminho_assinado = resolver_caminho_arquivo(
+        documento.caminho_arquivo_assinado)
     problemas = []
 
     original_integro = False
     if caminho_original and os.path.exists(caminho_original):
-        original_integro = gerar_hash_arquivo(caminho_original) == documento.hash_original
+        original_integro = gerar_hash_arquivo(
+            caminho_original) == documento.hash_original
     else:
         problemas.append("Arquivo original não encontrado.")
 
     assinado_integro = None
     if documento.hash_arquivo_assinado:
         if caminho_assinado and os.path.exists(caminho_assinado):
-            assinado_integro = gerar_hash_arquivo(caminho_assinado) == documento.hash_arquivo_assinado
+            assinado_integro = gerar_hash_arquivo(
+                caminho_assinado) == documento.hash_arquivo_assinado
         else:
             assinado_integro = False
             problemas.append("PDF assinado não encontrado.")
@@ -430,7 +437,8 @@ def verificar(documento_id: int):
         })
 
     if not detalhes_assinaturas:
-        problemas.append("Nenhuma assinatura digital registrada para este documento.")
+        problemas.append(
+            "Nenhuma assinatura digital registrada para este documento.")
 
     valido = (
         original_integro
@@ -695,7 +703,8 @@ def assinar(documento_id: int):
 
         flash("Documento assinado com sucesso.", "success")
     except UnicodeDecodeError:
-        flash("Não foi possível ler a chave privada. Envie um arquivo .pem válido.", "error")
+        flash(
+            "Não foi possível ler a chave privada. Envie um arquivo .pem válido.", "error")
     except PermissionError as e:
         flash(str(e), "error")
     except ValueError as e:
@@ -761,9 +770,11 @@ def novo_documento():
             if emails_enviados == len(convites_criados):
                 flash("Documento preparado e convites enviados com sucesso.", "success")
             elif emails_enviados > 0:
-                flash("Documento preparado. Alguns convites não puderam ser enviados por e-mail.", "warning")
+                flash(
+                    "Documento preparado. Alguns convites não puderam ser enviados por e-mail.", "warning")
             else:
-                flash("Documento preparado, mas os convites não puderam ser enviados por e-mail.", "warning")
+                flash(
+                    "Documento preparado, mas os convites não puderam ser enviados por e-mail.", "warning")
 
             return redirect(url_for("documentos.index"))
         except ValueError as e:

@@ -366,8 +366,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal();
     };
 
+    const themeSwitchers = document.querySelectorAll('.theme-switcher-container');
     const themeBtns = document.querySelectorAll('.theme-btn');
-    const activePill = document.querySelector('.active-pill');
 
     function updateTheme(theme) {
         const root = document.documentElement;
@@ -379,15 +379,25 @@ document.addEventListener('DOMContentLoaded', () => {
             root.setAttribute('data-theme', 'light');
         }
 
-        themeBtns.forEach((btn, index) => {
-            if (btn.dataset.themeValue === theme) {
-                btn.classList.add('active', 'text-white');
-                btn.classList.remove('text-white/50');
-                activePill.style.transform = `translateX(${index * 32}px)`;
-            } else {
-                btn.classList.remove('active', 'text-white');
-                btn.classList.add('text-white/50');
-            }
+        themeSwitchers.forEach((switcher) => {
+            const activePill = switcher.querySelector('.active-pill');
+            const switcherBtns = switcher.querySelectorAll('.theme-btn');
+
+            switcherBtns.forEach((btn) => {
+                if (btn.dataset.themeValue === theme) {
+                    btn.classList.add('active', 'text-white');
+                    btn.classList.remove('text-white/50');
+
+                    if (activePill) {
+                        activePill.style.width = `${btn.offsetWidth}px`;
+                        activePill.style.height = `${btn.offsetHeight}px`;
+                        activePill.style.transform = `translate(${btn.offsetLeft - activePill.offsetLeft}px, ${btn.offsetTop - activePill.offsetTop}px)`;
+                    }
+                } else {
+                    btn.classList.remove('active', 'text-white');
+                    btn.classList.add('text-white/50');
+                }
+            });
         });
 
         localStorage.setItem('hybrid-theme', theme);

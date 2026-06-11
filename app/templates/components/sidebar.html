@@ -4,8 +4,8 @@
 {% set nav_items = [
     ('dashboard', 'Dashboard', 'layout-dashboard', url_for('dashboard.index')),
     ('documentos', 'Documentos', 'folder-open',url_for('documentos.index')),
-    ('processos', 'Pesquisar', 'search', '#'),
-    ('configuracoes', 'Configurações', 'settings', '#')
+    ('processos', 'Pesquisar', 'search', url_for('main.pesquisa')),
+    ('configuracoes', 'Configurações', 'settings', url_for('main.configuracoes'))
 ] %}
 
 <header class="md:hidden glass-panel absolute top-0 left-0 right-0 h-16 flex items-center justify-between px-4 z-40 border-b border-white/10">
