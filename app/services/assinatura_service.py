@@ -14,6 +14,7 @@ from app.services.crypto_services import assinar_hash
 
 
 def buscar_chave_publica_ativa(usuario_id: int) -> ChavePublica:
+    """Busca a chave pública ativa associada ao usuário informado."""
 
     chave_publica = ChavePublica.query.filter_by(
         id_usuario=usuario_id,
@@ -28,6 +29,7 @@ def buscar_chave_publica_ativa(usuario_id: int) -> ChavePublica:
 
 
 def buscar_assinante_por_id(assinante_id: int) -> AssinanteDocumento:
+    """Busca um assinante pelo ID ou lança erro quando ele não existe."""
 
     assinante = db.session.get(AssinanteDocumento, assinante_id)
 
@@ -43,6 +45,11 @@ def assinar_documento(
     chave_privada: str,
     senha_chave_privada: str
 ) -> Assinatura:
+    """
+    Assina o hash original do documento em nome do assinante vinculado.
+
+    Valida o documento, o convite, a chave pública ativa e persiste a assinatura.
+    """
 
     documento = buscar_documento_por_id(documento_id)
 
@@ -100,16 +107,19 @@ def assinar_documento(
 
 
 def listar_assinaturas_por_documento(documento_id: int) -> list[Assinatura]:
+    """Lista todas as assinaturas registradas para um documento."""
 
     return Assinatura.query.filter_by(documento_id=documento_id).all()
 
 
 def listar_assinaturas_documento(documento_id: int) -> list[Assinatura]:
+    """Alias de compatibilidade para listar assinaturas de um documento."""
 
     return listar_assinaturas_por_documento(documento_id)
 
 
 def buscar_assinatura_por_id(assinatura_id: int) -> Assinatura:
+    """Busca uma assinatura pelo ID ou lança erro quando ela não existe."""
 
     assinatura = db.session.get(Assinatura, assinatura_id)
 
@@ -120,6 +130,7 @@ def buscar_assinatura_por_id(assinatura_id: int) -> Assinatura:
 
 
 def verificar_assinatura_existente(assinante_id: int) -> bool:
+    """Informa se já existe assinatura para o assinante informado."""
 
     assinatura = Assinatura.query.filter_by(assinante_id=assinante_id).first()
 

@@ -5,6 +5,8 @@ import base64
 
 
 def gerar_chave_eccdsa(senha_chave):
+    """Gera um par de chaves ECC/ECDSA e protege a chave privada com senha."""
+
     chave_privada = ECC.generate(curve='P-256')
 
     chave_publica = chave_privada.public_key()
@@ -24,6 +26,7 @@ def assinar_hash(
         chave_privada_pem: str,
         senha_chave: str
 ) -> str:
+    """Assina um hash hexadecimal com chave privada ECC e retorna Base64."""
 
     try:
         chave_privada = ECC.import_key(
@@ -48,6 +51,7 @@ def verificar_assinatura_hash(
         assinatura_digital: str,
         chave_publica_pem: str
 ) -> bool:
+    """Verifica se uma assinatura Base64 corresponde ao hash e à chave pública."""
 
     try:
         chave_publica = ECC.import_key(chave_publica_pem)

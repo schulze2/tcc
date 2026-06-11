@@ -16,6 +16,8 @@ PRIORIDADES = ["baixa", "normal", "alta", "urgente"]
 
 
 def obter_upload_folder() -> str:
+    """Obtém a pasta de upload configurada ou usa o caminho padrão."""
+
     if has_app_context():
         return current_app.config.get(
             "UPLOAD_FOLDER",
@@ -26,6 +28,7 @@ def obter_upload_folder() -> str:
 
 
 def validar_prioridade(prioridade: str) -> str:
+    """Normaliza e valida a prioridade informada para um documento."""
 
     if not prioridade:
         return "normal"
@@ -43,6 +46,12 @@ def salvar_documento_original(
         usuario_id: int,
         prioridade: str | None = "normal"
 ):
+    """
+    Valida e salva o PDF original enviado, calcula seu hash e cria o documento.
+
+    A função grava o arquivo em disco e persiste o registro inicial no banco.
+    """
+
     if not arquivo:
         raise ValueError("Nenhum Arquivo enviado.")
 
@@ -82,6 +91,8 @@ def salvar_documento_original(
 
 
 def buscar_documento_por_id(documento_id: int) -> Documento:
+    """Busca um documento pelo ID ou lança erro quando ele não existe."""
+
     documento = db.session.get(Documento, documento_id)
 
     if not documento:
@@ -91,6 +102,7 @@ def buscar_documento_por_id(documento_id: int) -> Documento:
 
 
 def validar_documento_para_assinatura(documento: Documento) -> None:
+    """Garante que o status atual do documento permita novas assinaturas."""
 
     if documento.status in ["cancelado", "recusado"]:
         raise ValueError("Este documento não pode ser assinado.")
@@ -103,6 +115,7 @@ def validar_documento_para_assinatura(documento: Documento) -> None:
 
 
 def validar_documento_para_finalizacao(documento: Documento) -> None:
+    """Garante que o documento esteja em um status que permita finalização."""
 
     if documento.status in ["cancelado", "recusado"]:
         raise ValueError("Documento cancelado ou recusado.")
@@ -115,6 +128,7 @@ def validar_documento_para_finalizacao(documento: Documento) -> None:
 
 
 def todos_assinantes_assinaram(documento_id: int) -> bool:
+    """Informa se todos os assinantes vinculados ao documento já assinaram."""
 
     assinantes = AssinanteDocumento.query.filter_by(
         documento_id=documento_id
@@ -131,6 +145,11 @@ def cancelar_documento(
         usuario_id: int,
         motivo: str | None = None
 ) -> Documento:
+    """
+    Cancela um documento do usuário e encerra convites ainda pendentes.
+
+    Apenas o dono do documento pode executar o cancelamento.
+    """
 
     documento = buscar_documento_por_id(documento_id)
 
@@ -163,6 +182,7 @@ def atualizar_prioridade_documento(
         usuario_id: int,
         nova_prioridade: str
 ) -> Documento:
+    """Atualiza a prioridade de um documento pertencente ao usuário informado."""
 
     documento = buscar_documento_por_id(documento_id)
 
@@ -181,6 +201,7 @@ def atualizar_documento_assinado(
     caminho_pdf_assinado: str,
     nome_pdf_assinado: str
 ) -> Documento:
+    """Registra no documento o PDF assinado gerado e seu hash SHA-256."""
 
     hash_assinado = gerar_hash_arquivo(caminho_pdf_assinado)
 
@@ -195,6 +216,13 @@ def atualizar_documento_assinado(
 
 
 def finalizar_documento(documento_id: int) -> Documento:
+    """
+    Finaliza o fluxo de assinatura de um documento e registra o hash na blockchain.
+
+    Gera o PDF com certificado, atualiza o documento assinado e salva o registro
+    da transação confirmada.
+    """
+
     from app.services.assinatura_service import listar_assinaturas_documento
     from app.services.blockchain_service import registrar_documento_blockchain
 

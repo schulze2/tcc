@@ -8,10 +8,14 @@ OUTPUT_FOLDER = "uploads/documentos_assinados"
 
 
 def criar_pasta_saida() -> None:
+    """Garante que a pasta de PDFs assinados exista."""
+
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 
 def gerar_nome_pdf_assinado(documento) -> str:
+    """Monta o nome do arquivo assinado a partir do documento original."""
+
     nome_original = documento.nome_arquivo_original
 
     if nome_original.lower().endswith(".pdf"):
@@ -23,6 +27,8 @@ def gerar_nome_pdf_assinado(documento) -> str:
 
 
 def inserir_linha(pagina, texto: str, x: int, y: int, tamanho: int = 8) -> int:
+    """Insere uma linha de texto na página e retorna a próxima posição vertical."""
+
     pagina.insert_text(
         (x, y),
         texto,
@@ -34,10 +40,14 @@ def inserir_linha(pagina, texto: str, x: int, y: int, tamanho: int = 8) -> int:
 
 
 def nova_pagina_certificado(doc):
+    """Cria uma nova página A4 para o certificado de assinaturas."""
+
     return doc.new_page(width=595, height=842)
 
 
 def garantir_espaco(doc, pagina, y: int):
+    """Cria uma nova página quando a posição atual não comporta mais linhas."""
+
     if y > 780:
         pagina = nova_pagina_certificado(doc)
         y = 50
@@ -46,6 +56,8 @@ def garantir_espaco(doc, pagina, y: int):
 
 
 def abreviar_valor(valor: str | None, inicio: int = 24, fim: int = 16) -> str:
+    """Abrevia valores longos preservando o começo e o fim para conferência."""
+
     if not valor:
         return "-"
 
@@ -56,6 +68,12 @@ def abreviar_valor(valor: str | None, inicio: int = 24, fim: int = 16) -> str:
 
 
 def gerar_pdf_assinado_com_certificado(documento, assinaturas: list) -> tuple[str, str]:
+    """
+    Gera uma cópia do PDF original com uma página de certificado de assinaturas.
+
+    Retorna o nome e o caminho do arquivo assinado criado em disco.
+    """
+
     criar_pasta_saida()
 
     nome_pdf_assinado = gerar_nome_pdf_assinado(documento)

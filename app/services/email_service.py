@@ -10,6 +10,13 @@ def enviar_convite_assinatura(
     link_convite: str,
     possui_conta: bool
 ) -> None:
+    """
+    Envia por e-mail o convite para assinatura de um documento.
+
+    Ajusta as instruções conforme o destinatário já tenha conta ou precise
+    criar uma usando o mesmo e-mail do convite.
+    """
+
     assunto = "Convite para assinatura digital de documento"
 
     if possui_conta:

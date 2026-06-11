@@ -9,6 +9,12 @@ from app.extensions import db
 
 
 def criar_usuario(nome, email, oab, senha, cargo, senha_chave):
+    """
+    Cria um usuário com senha criptografada e par de chaves ECC/ECDSA.
+
+    Também salva a chave pública ativa e vincula convites pendentes enviados
+    anteriormente para o mesmo e-mail.
+    """
 
     email_normalizado = email.strip().lower()
 
@@ -50,6 +56,8 @@ def criar_usuario(nome, email, oab, senha, cargo, senha_chave):
 
 
 def autenticar_usuario(email, senha):
+    """Valida as credenciais do usuário e retorna o registro autenticado."""
+
     email_normalizado = email.strip().lower()
     usuario = Usuario.query.filter_by(email=email_normalizado).first()
 

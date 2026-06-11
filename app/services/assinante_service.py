@@ -7,10 +7,14 @@ from app.models.assinante_documento import AssinanteDocumento
 
 
 def gerar_token_convite() -> str:
+    """Gera um token seguro para identificar o convite de assinatura."""
+
     return secrets.token_urlsafe(32)
 
 
 def normalizar_email(email: str) -> str:
+    """Valida, remove espaços e converte o e-mail para minúsculas."""
+
     if not email:
         raise ValueError("E-mail é obrigatório.")
 
@@ -70,6 +74,8 @@ def adicionar_assinante(
 
 
 def buscar_assinante_por_token(token_convite: str) -> AssinanteDocumento:
+    """Busca o assinante pelo token público do convite."""
+
     assinante = AssinanteDocumento.query.filter_by(
         token_convite=token_convite
     ).first()
@@ -81,12 +87,16 @@ def buscar_assinante_por_token(token_convite: str) -> AssinanteDocumento:
 
 
 def listar_assinantes_documento(documento_id: int) -> list[AssinanteDocumento]:
+    """Lista todos os assinantes vinculados a um documento."""
+
     return AssinanteDocumento.query.filter_by(
         documento_id=documento_id
     ).all()
 
 
 def marcar_como_visualizado(assinante: AssinanteDocumento) -> AssinanteDocumento:
+    """Marca um convite pendente como visualizado e registra a data."""
+
     if assinante.status == "pendente":
         assinante.status = "visualizado"
         assinante.visualizado_em = datetime.now()
@@ -137,6 +147,12 @@ def recusar_assinatura(
     token_convite: str,
     motivo: str | None = None
 ) -> AssinanteDocumento:
+    """
+    Registra a recusa de um convite e bloqueia o documento para novas assinaturas.
+
+    Também cancela os demais convites que ainda estavam pendentes ou visualizados.
+    """
+
     assinante = buscar_assinante_por_token(token_convite)
     documento = assinante.documento
 

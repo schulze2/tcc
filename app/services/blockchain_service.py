@@ -12,11 +12,15 @@ ABI_PATH = BASE_DIR / 'blockchain' / 'RegistroDocumentosABI.json'
 
 
 def carregar_abi():
+    """Carrega o ABI do contrato de registro de documentos."""
+
     with open(ABI_PATH, "r", encoding="utf-8") as arquivo:
         return json.load(arquivo)
 
 
 def conectar_blockchain():
+    """Cria a conexão Web3 com a rede configurada e valida disponibilidade."""
+
     web3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL")))
 
     if not web3.is_connected():
@@ -27,6 +31,8 @@ def conectar_blockchain():
 
 
 def obter_contrato(web3: Web3):
+    """Instancia o contrato inteligente usando endereço e ABI configurados."""
+
     endereco_contrato = Web3.to_checksum_address(
         os.getenv("CONTRACT_ADDRESS")
     )
@@ -40,6 +46,8 @@ def obter_contrato(web3: Web3):
 
 
 def preparar_hash_bytes32(hash_hex: str):
+    """Valida e formata um hash SHA-256 hexadecimal para bytes32."""
+
     if not hash_hex:
         raise ValueError("Hash não informado")
 
@@ -57,6 +65,8 @@ def preparar_hash_bytes32(hash_hex: str):
 
 
 def consultar_documento_blockchain(hash_arquivo: str):
+    """Consulta no contrato os dados de registro de um hash de documento."""
+
     web3 = conectar_blockchain()
     contrato = obter_contrato(web3)
 
@@ -76,6 +86,12 @@ def registrar_documento_blockchain(
     hash_arquivo_assinado: str,
     referencia_documento: str
 ):
+    """
+    Registra o hash assinado do documento no contrato inteligente.
+
+    Monta, assina e envia a transação, aguardando o recibo de confirmação.
+    """
+
     web3 = conectar_blockchain()
     contrato = obter_contrato(web3)
 
