@@ -1,3 +1,5 @@
+"""Rotas de autenticacao e verificacao de conta."""
+
 from flask import Blueprint, jsonify, request, redirect, url_for, flash, render_template
 from flask_login import login_user, logout_user, current_user, login_required
 from app.models import Usuario
@@ -10,6 +12,7 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/auth")
 
 @auth_bp.route("/verificar-email", methods=["GET"])
 def verificar_email():
+    """Verifica se um e-mail ja esta cadastrado para uso no formulario."""
     email = request.args.get("email", "").strip().lower()
 
     if not email:
@@ -20,6 +23,7 @@ def verificar_email():
 
 @auth_bp.route("/login", methods=["POST"])
 def login():
+    """Autentica o usuario e responde com redirect HTML ou JSON para AJAX."""
     form_login = LoginForm()
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
@@ -61,6 +65,7 @@ def login():
 @auth_bp.route("/logout")
 @login_required
 def logout():
+    """Encerra a sessao do usuario autenticado."""
     logout_user()
     flash("Você saiu da sua conta.", "success")
     return redirect(url_for("main.index"))

@@ -1,5 +1,6 @@
+"""Rotas principais da aplicacao, incluindo login e cadastro."""
+
 from flask import Blueprint, render_template, flash
-from flask_login import current_user, login_required
 
 from app.forms.usuario_form import CadastroUsuarioForm, LoginForm
 from app.services.usuario_services import criar_usuario
@@ -9,6 +10,7 @@ main_bp = Blueprint('main', __name__)
 
 @main_bp.route("/", methods=["GET", "POST"])
 def index():
+    """Exibe login/cadastro e processa o cadastro inicial de usuario."""
     form_registro = CadastroUsuarioForm()
     form_login = LoginForm()
 
@@ -41,15 +43,3 @@ def index():
         form_login=form_login,
         abrir_modal_registro=True
     )
-
-
-@main_bp.route("/pesquisa")
-@login_required
-def pesquisa():
-    return render_template("pesquisa.html", title="Pesquisar Documentos", usuario=current_user)
-
-
-@main_bp.route("/configuracoes")
-@login_required
-def configuracoes():
-    return render_template("configuracoes.html", title="Configurações", usuario=current_user)

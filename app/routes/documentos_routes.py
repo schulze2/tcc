@@ -1,3 +1,5 @@
+"""Rotas e helpers para gestao, assinatura e verificacao de documentos."""
+
 import os
 from urllib.parse import urljoin
 
@@ -32,6 +34,7 @@ documentos_bp = Blueprint("documentos", __name__, url_prefix="/documentos")
 
 
 def resolver_caminho_arquivo(caminho_arquivo: str | None) -> str | None:
+    """Resolve caminhos relativos de upload para caminhos absolutos no projeto."""
     if not caminho_arquivo:
         return None
 
@@ -43,6 +46,7 @@ def resolver_caminho_arquivo(caminho_arquivo: str | None) -> str | None:
 
 
 def formatar_tamanho_arquivo(caminho_arquivo: str | None) -> str:
+    """Retorna o tamanho de um arquivo em formato legivel para a interface."""
     caminho_resolvido = resolver_caminho_arquivo(caminho_arquivo)
 
     if not caminho_resolvido or not os.path.exists(caminho_resolvido):
@@ -60,6 +64,7 @@ def formatar_tamanho_arquivo(caminho_arquivo: str | None) -> str:
 
 
 def montar_item_documento(documento: Documento, tipo: str, convite=None) -> dict:
+    """Monta o dicionario visual usado na listagem de documentos."""
     status_visual = {
         "aguardando_assinatura": {
             "texto": "Pendente",
@@ -197,6 +202,7 @@ def montar_item_documento(documento: Documento, tipo: str, convite=None) -> dict
 
 
 def usuario_pode_acessar_documento(documento_id: int) -> bool:
+    """Indica se o usuario atual pode acessar um documento por posse ou convite."""
     email_usuario = current_user.email.lower().strip()
 
     documento = db.session.get(Documento, documento_id)
@@ -219,6 +225,7 @@ def usuario_pode_acessar_documento(documento_id: int) -> bool:
 
 
 def vincular_convite_por_email(assinante: AssinanteDocumento) -> None:
+    """Associa ao usuario atual um convite criado para seu e-mail."""
     email_usuario = current_user.email.lower().strip()
 
     if assinante.usuario_id is None and assinante.email == email_usuario:
@@ -228,6 +235,7 @@ def vincular_convite_por_email(assinante: AssinanteDocumento) -> None:
 
 
 def enviar_email_convite(assinante: AssinanteDocumento) -> None:
+    """Envia por e-mail o link publico de aceite de assinatura."""
     link_convite = url_for(
         "documentos.convite",
         token_convite=assinante.token_convite,
@@ -246,6 +254,7 @@ def enviar_email_convite(assinante: AssinanteDocumento) -> None:
 @documentos_bp.route("/")
 @login_required
 def index():
+    """Lista documentos criados pelo usuario e convites recebidos."""
     documentos_criados = Documento.query.filter(
         Documento.usuario_id == current_user.id,
         Documento.status.in_(
@@ -302,6 +311,7 @@ def index():
 @documentos_bp.route("/<int:documento_id>/visualizar")
 @login_required
 def visualizar(documento_id: int):
+    """Exibe o PDF original ou assinado para usuarios autorizados."""
     documento = db.session.get(Documento, documento_id)
 
     if not documento:
@@ -330,6 +340,7 @@ def visualizar(documento_id: int):
 @documentos_bp.route("/<int:documento_id>/download/original")
 @login_required
 def download_original(documento_id: int):
+    """Baixa o arquivo original de um documento acessivel ao usuario."""
     documento = db.session.get(Documento, documento_id)
 
     if not documento:
@@ -355,6 +366,7 @@ def download_original(documento_id: int):
 @documentos_bp.route("/<int:documento_id>/download/assinado")
 @login_required
 def download_assinado(documento_id: int):
+    """Baixa o PDF assinado de um documento quando ele ja existe."""
     documento = db.session.get(Documento, documento_id)
 
     if not documento:
@@ -380,6 +392,7 @@ def download_assinado(documento_id: int):
 @documentos_bp.route("/<int:documento_id>/verificar")
 @login_required
 def verificar(documento_id: int):
+    """Valida integridade de arquivos e assinaturas digitais de um documento."""
     documento = db.session.get(Documento, documento_id)
 
     if not documento:
@@ -462,6 +475,7 @@ def verificar(documento_id: int):
 @documentos_bp.route("/<int:documento_id>/blockchain/verificar")
 @login_required
 def verificar_blockchain(documento_id: int):
+    """Consulta o registro blockchain de um documento assinado."""
     documento = db.session.get(Documento, documento_id)
 
     if not documento:
@@ -484,6 +498,7 @@ def verificar_blockchain(documento_id: int):
     ).order_by(RegistroBlockchain.registrado_em.desc()).first()
 
     def montar_url_explorer(tx_hash: str | None) -> str | None:
+        """Monta a URL do explorador de blocos para uma transacao."""
         if not tx_hash:
             return None
 
@@ -495,6 +510,7 @@ def verificar_blockchain(documento_id: int):
         return urljoin(base_url.rstrip("/") + "/", tx_hash)
 
     def serializar_registro(registro):
+        """Serializa um registro blockchain local para resposta JSON."""
         if not registro:
             return None
 
@@ -553,6 +569,7 @@ def verificar_blockchain(documento_id: int):
 
 @documentos_bp.route("/convites/<token_convite>")
 def convite(token_convite: str):
+    """Exibe a tela publica de convite de assinatura por token."""
     try:
         assinante = buscar_assinante_por_token(token_convite)
     except ValueError:
@@ -584,6 +601,7 @@ def convite(token_convite: str):
 @documentos_bp.route("/<int:documento_id>/cancelar", methods=["POST"])
 @login_required
 def cancelar(documento_id: int):
+    """Cancela um documento pendente quando o usuario tem permissao."""
     try:
         cancelar_documento(
             documento_id=documento_id,
@@ -601,6 +619,7 @@ def cancelar(documento_id: int):
 @documentos_bp.route("/<int:documento_id>/finalizar", methods=["POST"])
 @login_required
 def finalizar(documento_id: int):
+    """Finaliza um documento e tenta registrar seu PDF assinado na blockchain."""
     documento = db.session.get(Documento, documento_id)
 
     if not documento:
@@ -642,6 +661,7 @@ def finalizar(documento_id: int):
 @documentos_bp.route("/convites/<int:assinante_id>/recusar", methods=["POST"])
 @login_required
 def recusar_convite(assinante_id: int):
+    """Registra a recusa de um convite de assinatura pelo usuario atual."""
     try:
         assinante = db.session.get(AssinanteDocumento, assinante_id)
 
@@ -667,6 +687,7 @@ def recusar_convite(assinante_id: int):
 @documentos_bp.route("/<int:documento_id>/assinar", methods=["POST"])
 @login_required
 def assinar(documento_id: int):
+    """Assina um documento usando a chave privada enviada pelo assinante."""
     assinante_id = request.form.get("assinante_id", type=int)
     chave_privada = request.files.get("chave_privada")
     senha_chave_privada = request.form.get("senha_chave_privada", "").strip()
@@ -717,6 +738,7 @@ def assinar(documento_id: int):
 @documentos_bp.route("/novo", methods=["GET", "POST"])
 @login_required
 def novo_documento():
+    """Exibe e processa o formulario de criacao de novo documento."""
     if request.method == "POST":
         arquivo = request.files.get("arquivo")
         nomes = request.form.getlist("assinantes_nome[]")
